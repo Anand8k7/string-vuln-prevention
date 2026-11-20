@@ -1597,27 +1597,27 @@ Full automated run:
 $ bash tests/scenarios/q1_overflow.sh | grep -v '^TF_RESULT'
 
 === Scenario suite: q1_overflow (vulnerable vs secure) ===
-+-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
-| ID    | Category  | Input                        | Vulnerable (plain)       | Vulnerable (ASan build)        | Expect | Secure result                | S+ASn | Result |
-+-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
-| Q1-01 | Normal    | alice cse                    | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q1-02 | Normal    | j.doe-99 ise (allowed ._-)   | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q1-03 | Boundary  | username 15 chars (max)      | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q1-04 | Boundary  | username 16 chars (max+1)    | role wiped ("")          | NOT DETECTED: role wiped ("")  | REJECT | REJECT: username too long    | clean | PASS   |
-| Q1-05 | Boundary  | path = 31 chars (exact fit)  | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q1-06 | Boundary  | path = 32 chars (1 over)     | greeting corrupted       | ASan: stack-buffer-overflow    | REJECT | REJECT: path too long        | clean | PASS   |
-| Q1-07 | Boundary  | user 15 + dept 15 (path 37)  | greeting corrupted       | ASan: stack-buffer-overflow    | REJECT | REJECT: path too long        | clean | PASS   |
-| Q1-08 | Invalid   | empty username               | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: username empty       | clean | PASS   |
-| Q1-09 | Invalid   | username "bob;ls"            | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: username bad char    | clean | PASS   |
-| Q1-10 | Invalid   | username with space          | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: username bad char    | clean | PASS   |
-| Q1-11 | Invalid   | department "cse1" (digit)    | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: department bad char  | clean | PASS   |
-| Q1-12 | Invalid   | missing department argument  | usage error              | usage error                    | USAGE  | USAGE                        | clean | PASS   |
-| Q1-13 | Oversized | username 20 x 'A'            | role overwritten "AAAA"  | NOT DETECTED: role overwritten | REJECT | REJECT: username too long    | clean | PASS   |
-| Q1-14 | Oversized | username 24 x 'A'            | role overwritten "AAAAAA | ASan: stack-buffer-overflow    | REJECT | REJECT: username too long    | clean | PASS   |
-| Q1-15 | Oversized | username 100 x 'A'           | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: username too long    | clean | PASS   |
-| Q1-16 | Oversized | username 5000 x 'A'          | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: username too long    | clean | PASS   |
-| Q1-17 | Oversized | department 100 x 'A'         | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: department too long  | clean | PASS   |
-+-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
++-------+-----------+------------------------------+--------------------------------+--------------------------------------+--------+----------------------------------------------+-------+--------+
+| ID    | Category  | Input                        | Vulnerable (plain)             | Vulnerable (ASan build)              | Expect | Secure result                                | S+ASn | Result |
++-------+-----------+------------------------------+--------------------------------+--------------------------------------+--------+----------------------------------------------+-------+--------+
+| Q1-01 | Normal    | alice cse                    | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q1-02 | Normal    | j.doe-99 ise (allowed ._-)   | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q1-03 | Boundary  | username 15 chars (max)      | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q1-04 | Boundary  | username 16 chars (max+1)    | role wiped ("")                | NOT DETECTED: role wiped ("")        | REJECT | REJECT: username too long                    | clean | PASS   |
+| Q1-05 | Boundary  | path = 31 chars (exact fit)  | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q1-06 | Boundary  | path = 32 chars (1 over)     | greeting corrupted             | ASan: stack-buffer-overflow          | REJECT | REJECT: path too long                        | clean | PASS   |
+| Q1-07 | Boundary  | user 15 + dept 15 (path 37)  | greeting corrupted             | ASan: stack-buffer-overflow          | REJECT | REJECT: path too long                        | clean | PASS   |
+| Q1-08 | Invalid   | empty username               | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: username empty                       | clean | PASS   |
+| Q1-09 | Invalid   | username "bob;ls"            | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: username bad char                    | clean | PASS   |
+| Q1-10 | Invalid   | username with space          | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: username bad char                    | clean | PASS   |
+| Q1-11 | Invalid   | department "cse1" (digit)    | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: department bad char                  | clean | PASS   |
+| Q1-12 | Invalid   | missing department argument  | usage error                    | usage error                          | USAGE  | USAGE                                        | clean | PASS   |
+| Q1-13 | Oversized | username 20 x 'A'            | role overwritten "AAAA"        | NOT DETECTED: role overwritten "AAAA | REJECT | REJECT: username too long                    | clean | PASS   |
+| Q1-14 | Oversized | username 24 x 'A'            | role overwritten "AAAAAAAA"    | ASan: stack-buffer-overflow          | REJECT | REJECT: username too long                    | clean | PASS   |
+| Q1-15 | Oversized | username 100 x 'A'           | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: username too long                    | clean | PASS   |
+| Q1-16 | Oversized | username 5000 x 'A'          | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: username too long                    | clean | PASS   |
+| Q1-17 | Oversized | department 100 x 'A'         | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: department too long                  | clean | PASS   |
++-------+-----------+------------------------------+--------------------------------+--------------------------------------+--------+----------------------------------------------+-------+--------+
 Summary [q1_overflow]: 17/17 passed, 0 failed
 Full program output for every run: analysis/logs/scenarios/q1_overflow/
 [exit code: 0]
@@ -1654,16 +1654,16 @@ the source line and the size of the write:
 ```text
 $ ./bin/asan/vulnerable_q1_overflow abcdefghijklmno abcdefghijklmno
 =================================================================
-==65208==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x741943d000c0 at pc 0x7419469cd260 bp 0x7ffe0541e530 sp 0x7ffe0541dcd8
-WRITE of size 16 at 0x741943d000c0 thread T0
-    #0 0x7419469cd25f in strcat ../../../../src/libsanitizer/asan/asan_interceptors.cpp:515
-    #1 0x5831ff43269a in main src/vulnerable/q1_overflow.c:67
-    #2 0x7419460d81c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
-    #3 0x7419460d828a in __libc_start_main_impl ../csu/libc-start.c:360
-    #4 0x5831ff432284 in _start (bin/asan/vulnerable_q1_overflow+0x2284) (BuildId: 4ef7c6f699d2e443af6627ffb340ab9ec02e3f61)
+==176929==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x6fff34b000c0 at pc 0x6fff37750260 bp 0x7ffd845414b0 sp 0x7ffd84540c58
+WRITE of size 16 at 0x6fff34b000c0 thread T0
+    #0 0x6fff3775025f in strcat ../../../../src/libsanitizer/asan/asan_interceptors.cpp:515
+    #1 0x57d9abd6269a in main src/vulnerable/q1_overflow.c:67
+    #2 0x6fff36e5b1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #3 0x6fff36e5b28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #4 0x57d9abd62284 in _start (bin/asan/vulnerable_q1_overflow+0x2284) (BuildId: 4ef7c6f699d2e443af6627ffb340ab9ec02e3f61)
 
-Address 0x741943d000c0 is located in stack of thread T0 at offset 192 in frame
-    #0 0x5831ff432358 in main src/vulnerable/q1_overflow.c:42
+Address 0x6fff34b000c0 is located in stack of thread T0 at offset 192 in frame
+    #0 0x57d9abd62358 in main src/vulnerable/q1_overflow.c:42
 
   This frame has 3 object(s):
     [32, 64) 'acct' (line 43)
@@ -1713,24 +1713,24 @@ return address:
 
 ```text
 $ valgrind -q ./bin/vulnerable/q1_overflow $(printf 'A%.0s' {1..100}) cse 2>&1 | head -n 18
-==65214== Source and destination overlap in strcat(0x1ffeffec50, 0x1ffeffec70)
-==65214==    at 0x484EFE3: strcat (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
-==65214==    by 0x109288: main (q1_overflow.c:60)
-==65214== 
-==65214== Source and destination overlap in strcat(0x1ffeffec30, 0x1ffeffec70)
-==65214==    at 0x484EFE3: strcat (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
-==65214==    by 0x1092FC: main (q1_overflow.c:67)
-==65214== 
-==65214== Jump to the invalid address stated on the next line
-==65214==    at 0x4141414141414141: ???
-==65214==    by 0x4141414141414140: ???
-==65214==    by 0x4141414141414140: ???
-==65214==    by 0x4141414141414140: ???
-==65214==    by 0x4100214141414140: ???
-==65214==    by 0x4141414141414140: ???
-==65214==    by 0x4141414141414140: ???
-==65214==    by 0x41414140: ???
-==65214==  Address 0x4141414141414141 is not stack'd, malloc'd or (recently) free'd
+==176936== Source and destination overlap in strcat(0x1ffeffec50, 0x1ffeffec70)
+==176936==    at 0x484EFE3: strcat (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==176936==    by 0x109288: main (q1_overflow.c:60)
+==176936== 
+==176936== Source and destination overlap in strcat(0x1ffeffec30, 0x1ffeffec70)
+==176936==    at 0x484EFE3: strcat (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==176936==    by 0x1092FC: main (q1_overflow.c:67)
+==176936== 
+==176936== Jump to the invalid address stated on the next line
+==176936==    at 0x4141414141414141: ???
+==176936==    by 0x4141414141414140: ???
+==176936==    by 0x4141414141414140: ???
+==176936==    by 0x4141414141414140: ???
+==176936==    by 0x4100214141414140: ???
+==176936==    by 0x4141414141414140: ???
+==176936==    by 0x4141414141414140: ???
+==176936==    by 0x41414140: ???
+==176936==  Address 0x4141414141414141 is not stack'd, malloc'd or (recently) free'd
 [exit code: 0]
 ```
 <!-- END OUTPUT -->
@@ -2192,7 +2192,7 @@ Saved record: name=alice age=21 msg=hello
 
 $ printf 'alice\n21\n%%p.%%p.%%p.%%p\n' | ./bin/vulnerable/q2_format
 Name: Age: Message: 
-Your message: 0x768e48b3d5c0.(nil).(nil).0xa
+Your message: 0x7c9a334225c0.(nil).(nil).0xa
 Saved record: name=alice age=21 msg=%p.%p.%p.%p
 [exit code: 0]
 
@@ -2204,13 +2204,13 @@ Saved record: name=alice age=21 msg=%27$lx
 
 $ printf 'alice\n21\n50%%off\n' | ./bin/vulnerable/q2_format
 Name: Age: Message: 
-Your message: 5036762552700ff
+Your message: 5023472732700ff
 Saved record: name=alice age=21 msg=50%off
 [exit code: 0]
 
 $ printf 'alice\n21\n%%s%%s%%s%%s%%s%%s%%s%%s\n' | ./bin/vulnerable/q2_format
-bash: line 1: 66830 Done                    printf 'alice\n21\n%%s%%s%%s%%s%%s%%s%%s%%s\n'
-     66831 Segmentation fault      (core dumped) | ./bin/vulnerable/q2_format
+bash: line 1: 178554 Done                    printf 'alice\n21\n%%s%%s%%s%%s%%s%%s%%s%%s\n'
+     178555 Segmentation fault      (core dumped) | ./bin/vulnerable/q2_format
 [exit code: 139]
 ```
 <!-- END OUTPUT -->
@@ -2262,8 +2262,8 @@ Saved record: name=alice age=-1 msg=hello
 [exit code: 0]
 
 $ printf 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n21\nhello\n' | ./bin/vulnerable/q2_format
-bash: line 1: 66850 Done                    printf 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n21\nhello\n'
-     66851 Segmentation fault      (core dumped) | ./bin/vulnerable/q2_format
+bash: line 1: 178575 Done                    printf 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n21\nhello\n'
+     178576 Segmentation fault      (core dumped) | ./bin/vulnerable/q2_format
 [exit code: 139]
 ```
 <!-- END OUTPUT -->
@@ -2408,36 +2408,36 @@ Full automated run:
 $ bash tests/scenarios/q2_format.sh | grep -v '^TF_RESULT'
 
 === Scenario suite: q2_format (vulnerable vs secure) ===
-+-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
-| ID    | Category  | Input                        | Vulnerable (plain)       | Vulnerable (ASan build)        | Expect | Secure result                | S+ASn | Result |
-+-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
-| Q2-01 | Normal    | alice / 21 / hello           | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q2-02 | Normal    | name with space, msg w/ punc | age silently = 0         | NOT DETECTED: age silently = 0 | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q2-03 | Normal    | msg "50% off!" (literal %)   | format interpreted       | NOT DETECTED: format interpret | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q2-04 | Boundary  | name 15 chars (max)          | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q2-05 | Boundary  | name 16 chars (max+1)        | invalid input accepted   | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| Q2-06 | Boundary  | age 1 (min)                  | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q2-07 | Boundary  | age 120 (max)                | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q2-08 | Boundary  | age 0 (min-1)                | invalid input accepted   | NOT DETECTED: invalid input ac | REJECT | REJECT: age out of range     | clean | PASS   |
-| Q2-09 | Boundary  | age 121 (max+1)              | invalid input accepted   | NOT DETECTED: invalid input ac | REJECT | REJECT: age out of range     | clean | PASS   |
-| Q2-10 | Boundary  | message 40 chars (max)       | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q2-11 | Boundary  | message 41 chars (max+1)     | invalid input accepted   | NOT DETECTED: invalid input ac | REJECT | REJECT: message too long     | clean | PASS   |
-| Q2-12 | Boundary  | record 63 chars (exact fit)  | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q2-13 | Boundary  | record 73 chars (too long)   | record[64] overflowed    | ASan: stack-buffer-overflow    | REJECT | REJECT: record too long      | clean | PASS   |
-| Q2-14 | Invalid   | age "abc" (not a number)     | fields mixed up          | NOT DETECTED: fields mixed up  | REJECT | REJECT: age not a number     | clean | PASS   |
-| Q2-15 | Invalid   | age "-5" (negative)          | invalid input accepted   | NOT DETECTED: invalid input ac | REJECT | REJECT: age out of range     | clean | PASS   |
-| Q2-16 | Invalid   | age 20 digits (overflow)     | age silently = -1        | NOT DETECTED: age silently = - | REJECT | REJECT: age too long         | clean | PASS   |
-| Q2-17 | Invalid   | name "bob;ls"                | invalid input accepted   | NOT DETECTED: invalid input ac | REJECT | REJECT: name bad char        | clean | PASS   |
-| Q2-18 | Invalid   | message "hi <b>"             | fields mixed up          | NOT DETECTED: fields mixed up  | REJECT | REJECT: message bad char     | clean | PASS   |
-| Q2-19 | Invalid   | fmt: %p.%p.%p.%p             | format interpreted       | NOT DETECTED: format interpret | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q2-20 | Invalid   | fmt: %27$lx (reads secret)   | LEAK: secret_token       | NOT DETECTED: format interpret | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q2-21 | Invalid   | fmt: %s x 8                  | CRASH (SIGSEGV)          | NOT DETECTED: format interpret | ACCEPT | ACCEPT                       | clean | PASS   |
-| Q2-22 | Oversized | name 40 chars                | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| Q2-23 | Oversized | name 5000 chars              | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| Q2-24 | Oversized | message 60 chars             | record[64] overflowed    | ASan: stack-buffer-overflow    | REJECT | REJECT: message too long     | clean | PASS   |
-| Q2-25 | Oversized | message 200 chars            | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: message too long     | clean | PASS   |
-| Q2-26 | Invalid   | message missing (EOF)        | fields mixed up          | NOT DETECTED: invalid input ac | REJECT | REJECT: message missing      | clean | PASS   |
-+-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
++-------+-----------+------------------------------+--------------------------------+--------------------------------------+--------+----------------------------------------------+-------+--------+
+| ID    | Category  | Input                        | Vulnerable (plain)             | Vulnerable (ASan build)              | Expect | Secure result                                | S+ASn | Result |
++-------+-----------+------------------------------+--------------------------------+--------------------------------------+--------+----------------------------------------------+-------+--------+
+| Q2-01 | Normal    | alice / 21 / hello           | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q2-02 | Normal    | name with space, msg w/ punc | age silently = 0               | NOT DETECTED: age silently = 0       | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q2-03 | Normal    | msg "50% off!" (literal %)   | format interpreted             | NOT DETECTED: format interpreted     | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q2-04 | Boundary  | name 15 chars (max)          | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q2-05 | Boundary  | name 16 chars (max+1)        | invalid input accepted         | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| Q2-06 | Boundary  | age 1 (min)                  | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q2-07 | Boundary  | age 120 (max)                | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q2-08 | Boundary  | age 0 (min-1)                | invalid input accepted         | NOT DETECTED: invalid input accepted | REJECT | REJECT: age out of range                     | clean | PASS   |
+| Q2-09 | Boundary  | age 121 (max+1)              | invalid input accepted         | NOT DETECTED: invalid input accepted | REJECT | REJECT: age out of range                     | clean | PASS   |
+| Q2-10 | Boundary  | message 40 chars (max)       | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q2-11 | Boundary  | message 41 chars (max+1)     | invalid input accepted         | NOT DETECTED: invalid input accepted | REJECT | REJECT: message too long                     | clean | PASS   |
+| Q2-12 | Boundary  | record 63 chars (exact fit)  | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q2-13 | Boundary  | record 73 chars (too long)   | record[64] overflowed          | ASan: stack-buffer-overflow          | REJECT | REJECT: record too long                      | clean | PASS   |
+| Q2-14 | Invalid   | age "abc" (not a number)     | fields mixed up                | NOT DETECTED: fields mixed up        | REJECT | REJECT: age not a number                     | clean | PASS   |
+| Q2-15 | Invalid   | age "-5" (negative)          | invalid input accepted         | NOT DETECTED: invalid input accepted | REJECT | REJECT: age out of range                     | clean | PASS   |
+| Q2-16 | Invalid   | age 20 digits (overflow)     | age silently = -1              | NOT DETECTED: age silently = -1      | REJECT | REJECT: age too long                         | clean | PASS   |
+| Q2-17 | Invalid   | name "bob;ls"                | invalid input accepted         | NOT DETECTED: invalid input accepted | REJECT | REJECT: name bad char                        | clean | PASS   |
+| Q2-18 | Invalid   | message "hi <b>"             | fields mixed up                | NOT DETECTED: fields mixed up        | REJECT | REJECT: message bad char                     | clean | PASS   |
+| Q2-19 | Invalid   | fmt: %p.%p.%p.%p             | format interpreted             | NOT DETECTED: format interpreted     | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q2-20 | Invalid   | fmt: %27$lx (reads secret)   | LEAK: secret_token             | NOT DETECTED: format interpreted     | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q2-21 | Invalid   | fmt: %s x 8                  | CRASH (SIGSEGV)                | NOT DETECTED: format interpreted     | ACCEPT | ACCEPT                                       | clean | PASS   |
+| Q2-22 | Oversized | name 40 chars                | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| Q2-23 | Oversized | name 5000 chars              | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| Q2-24 | Oversized | message 60 chars             | record[64] overflowed          | ASan: stack-buffer-overflow          | REJECT | REJECT: message too long                     | clean | PASS   |
+| Q2-25 | Oversized | message 200 chars            | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: message too long                     | clean | PASS   |
+| Q2-26 | Invalid   | message missing (EOF)        | fields mixed up                | NOT DETECTED: invalid input accepted | REJECT | REJECT: message missing                      | clean | PASS   |
++-------+-----------+------------------------------+--------------------------------+--------------------------------------+--------+----------------------------------------------+-------+--------+
 Summary [q2_format]: 26/26 passed, 0 failed
 Full program output for every run: analysis/logs/scenarios/q2_format/
 [exit code: 0]
@@ -2515,17 +2515,17 @@ In function ‘sprintf’,
 ```text
 $ printf 'alice\n21\n%s\n' $(printf 'B%.0s' {1..60}) | ./bin/asan/vulnerable_q2_format 2>&1 | head -n 25
 =================================================================
-==66855==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x7af46f800120 at pc 0x7af4722d8d69 bp 0x7ffe14de9ee0 sp 0x7ffe14de9670
-WRITE of size 83 at 0x7af46f800120 thread T0
-    #0 0x7af4722d8d68 in vsprintf ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1671
-    #1 0x7af4722da51b in sprintf ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1714
-    #2 0x6158796e8442 in main src/vulnerable/q2_format.c:62
-    #3 0x7af471a0b1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
-    #4 0x7af471a0b28a in __libc_start_main_impl ../csu/libc-start.c:360
-    #5 0x6158796e81c4 in _start (bin/asan/vulnerable_q2_format+0x11c4) (BuildId: ec62d8f88313ead17a7f1efb2176e68eeab1df74)
+==178580==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x7228e8a00120 at pc 0x7228eb563d69 bp 0x7ffd77dcf230 sp 0x7ffd77dce9c0
+WRITE of size 83 at 0x7228e8a00120 thread T0
+    #0 0x7228eb563d68 in vsprintf ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1671
+    #1 0x7228eb56551b in sprintf ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1714
+    #2 0x57286a2a1442 in main src/vulnerable/q2_format.c:62
+    #3 0x7228eac961c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #4 0x7228eac9628a in __libc_start_main_impl ../csu/libc-start.c:360
+    #5 0x57286a2a11c4 in _start (bin/asan/vulnerable_q2_format+0x11c4) (BuildId: ec62d8f88313ead17a7f1efb2176e68eeab1df74)
 
-Address 0x7af46f800120 is located in stack of thread T0 at offset 288 in frame
-    #0 0x6158796e8298 in main src/vulnerable/q2_format.c:38
+Address 0x7228e8a00120 is located in stack of thread T0 at offset 288 in frame
+    #0 0x57286a2a1298 in main src/vulnerable/q2_format.c:38
 
   This frame has 5 object(s):
     [48, 52) 'age' (line 44)
@@ -2604,7 +2604,7 @@ The banned-API scanner was added because Cppcheck reported **none** of the
 
 ```text
 $ bash analysis/run_analysis.sh
-Analysis run: 2026-11-20 18:00:51 UTC
+Analysis run: 2026-11-20 19:10:28 UTC
 Host:         Linux 6.8.0-1070-azure
 gcc:          gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
 cppcheck:     Cppcheck 2.13.0
@@ -2939,100 +2939,100 @@ and the secure ASan build reports no error).
 $ bash tests/scenarios/examples.sh | grep -v '^TF_RESULT'
 
 === Scenario suite: examples (vulnerable vs secure) ===
-+-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
-| ID    | Category  | Input                        | Vulnerable (plain)       | Vulnerable (ASan build)        | Expect | Secure result                | S+ASn | Result |
-+-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
-| E01-1 | Normal    | alice                        | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E01-2 | Boundary  | 15 chars (max)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E01-3 | Boundary  | 16 chars (max+1)             | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E01-4 | Oversized | 200 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E02-1 | Normal    | bob                          | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E02-2 | Boundary  | 15 chars (fits 24)           | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E02-3 | Boundary  | 16 chars (1 over)            | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E02-4 | Oversized | 200 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E03-1 | Normal    | hello world                  | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E03-2 | Normal    | 50% off                      | format interpreted       | NOT DETECTED: format interpret | ACCEPT | ACCEPT                       | clean | PASS   |
-| E03-3 | Invalid   | %p.%p.%p.%p                  | stack values printed     | NOT DETECTED: stack values pri | ACCEPT | ACCEPT                       | clean | PASS   |
-| E03-4 | Invalid   | %s x 8                       | CRASH (SIGSEGV)          | NOT DETECTED: format interpret | ACCEPT | ACCEPT                       | clean | PASS   |
-| E04-1 | Normal    | word "cat"                   | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E04-2 | Boundary  | 7 chars (max)                | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E04-3 | Boundary  | 8 chars (max+1)              | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: word too long        | clean | PASS   |
-| E04-4 | Oversized | 300 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: word too long        | clean | PASS   |
-| E05-1 | Normal    | line "hello there"           | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E05-2 | Boundary  | 15 chars (max)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E05-3 | Boundary  | 16 chars (max+1)             | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: line too long        | clean | PASS   |
-| E05-4 | Invalid   | empty input (EOF)            | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: line missing         | clean | PASS   |
-| E05-5 | Oversized | 500 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: line too long        | clean | PASS   |
-| E06-1 | Normal    | abc                          | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E06-2 | Boundary  | 7 chars (max)                | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E06-3 | Boundary  | 8 chars (check passes)       | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: word too long        | clean | PASS   |
-| E06-4 | Oversized | 9 chars                      | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: word too long        | clean | PASS   |
-| E07-1 | Normal    | tom                          | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E07-2 | Boundary  | 7 chars (max)                | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E07-3 | Boundary  | 8 chars (no '\0')            | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E07-4 | Oversized | 40 chars                     | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E08-1 | Normal    | carol                        | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E08-2 | Boundary  | 20 chars (line 31)           | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E08-3 | Boundary  | 21 chars (line 32)           | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E08-4 | Oversized | 100 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E09-1 | Normal    | abc + def                    | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E09-2 | Boundary  | 200 + 54 (255 bytes)         | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E09-3 | Boundary  | 200 + 55 (256 -> 0)          | CRASH (SIGABRT)          | ASan: heap-buffer-overflow     | REJECT | REJECT: record too long      | clean | PASS   |
-| E09-4 | Oversized | 200 + 100 (301 -> 45)        | CRASH (SIGABRT)          | ASan: heap-buffer-overflow     | REJECT | REJECT: record too long      | clean | PASS   |
-| E10-1 | Normal    | month 3                      | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E10-2 | Boundary  | month 12                     | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E10-3 | Boundary  | month 13                     | bad input accepted       | ASan: global-buffer-overflow   | REJECT | REJECT: month must be a whol | clean | PASS   |
-| E10-4 | Boundary  | month 0                      | bad input accepted       | ASan: global-buffer-overflow   | REJECT | REJECT: month must be a whol | clean | PASS   |
-| E10-5 | Invalid   | "abc"                        | bad input accepted       | ASan: global-buffer-overflow   | REJECT | REJECT: month must be a whol | clean | PASS   |
-| E10-6 | Oversized | month 100000                 | CRASH (SIGSEGV)          | UBSan: runtime error           | REJECT | REJECT: month must be a whol | clean | PASS   |
-| E11-1 | Normal    | field "bob" (padded)         | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E11-2 | Boundary  | 7 chars                      | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E11-3 | Boundary  | 8 chars (no '\0')            | over-read past field     | ASan: stack-buffer-overflow    | ACCEPT | ACCEPT                       | clean | PASS   |
-| E11-4 | Invalid   | empty record                 | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: name field missing   | clean | PASS   |
-| E12-1 | Normal    | hi                           | OK (no visible effect)   | ASan: memcpy-param-overlap     | ACCEPT | ACCEPT                       | clean | PASS   |
-| E12-2 | Boundary  | 15 chars (max)               | OK (no visible effect)   | ASan: memcpy-param-overlap     | ACCEPT | ACCEPT                       | clean | PASS   |
-| E12-3 | Boundary  | 16 chars (max+1)             | bad input accepted       | ASan: memcpy-param-overlap     | REJECT | REJECT: text too long        | clean | PASS   |
-| E12-4 | Oversized | 100 chars                    | bad input accepted       | ASan: memcpy-param-overlap     | REJECT | REJECT: text too long        | clean | PASS   |
-| E13-1 | Normal    | dave                         | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E13-2 | Invalid   | dave; echo INJECTED          | command injected         | NOT DETECTED: command injected | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
-| E13-3 | Invalid   | dave && echo INJECTED        | command injected         | NOT DETECTED: command injected | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
-| E13-4 | Invalid   | $(echo INJECTED)             | command injected         | NOT DETECTED: command injected | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
-| E13-5 | Oversized | 200 chars                    | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
-| E14-1 | Normal    | welcome.txt                  | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E14-2 | Invalid   | ../secret.txt                | secret file read         | NOT DETECTED: secret file read | REJECT | REJECT: file name must be 1- | clean | PASS   |
-| E14-3 | Invalid   | ../../examples/secret        | secret file read         | NOT DETECTED: secret file read | REJECT | REJECT: file name must be 1- | clean | PASS   |
-| E14-4 | Invalid   | missing.txt                  | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: file not found       | clean | PASS   |
-| E14-5 | Oversized | 300-char name                | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: file name must be 1- | clean | PASS   |
-| E15-1 | Normal    | erin stay                    | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E15-2 | Normal    | erin logout                  | freed memory printed     | ASan: heap-use-after-free      | ACCEPT | ACCEPT                       | clean | PASS   |
-| E15-3 | Invalid   | erin reboot                  | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: command must be 'sta | clean | PASS   |
-| E15-4 | Oversized | 100-char name logout         | bad input accepted       | ASan: heap-use-after-free      | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
-| E16-1 | Normal    | frank                        | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E16-2 | Boundary  | 31 chars (max)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E16-3 | Boundary  | 32 chars (error path)        | CRASH (SIGABRT)          | ASan: double-free              | REJECT | REJECT: name too long        | clean | PASS   |
-| E16-4 | Oversized | 1000 chars                   | CRASH (SIGABRT)          | ASan: double-free              | REJECT | REJECT: name too long        | clean | PASS   |
-| E17-1 | Normal    | 64 bytes                     | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E17-2 | Boundary  | 32 bytes (min)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E17-3 | Boundary  | 31 bytes (min-1)             | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: size must be a whole | clean | PASS   |
-| E17-4 | Invalid   | "abc"                        | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: size must be a whole | clean | PASS   |
-| E17-5 | Invalid   | -1                           | CRASH (SIGSEGV)          | ASan: allocation-size-too-big  | REJECT | REJECT: size must be a whole | clean | PASS   |
-| E17-6 | Oversized | 10^15 bytes                  | CRASH (SIGSEGV)          | ASan: allocation-size-too-big  | REJECT | REJECT: size must be a whole | clean | PASS   |
-| E18-1 | Normal    | hello                        | OK (no visible effect)   | ASan: heap-buffer-overflow     | ACCEPT | ACCEPT                       | clean | PASS   |
-| E18-2 | Boundary  | 1 char                       | OK (no visible effect)   | ASan: heap-buffer-overflow     | ACCEPT | ACCEPT                       | clean | PASS   |
-| E18-3 | Invalid   | empty string                 | bad input accepted       | UBSan: runtime error           | REJECT | REJECT: text must be 1-4096  | clean | PASS   |
-| E18-4 | Oversized | 5000 chars                   | bad input accepted       | ASan: heap-buffer-overflow     | REJECT | REJECT: text must be 1-4096  | clean | PASS   |
-| E19-1 | Normal    | hello, n=3                   | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E19-2 | Boundary  | n=0                          | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E19-3 | Boundary  | n=31 (max)                   | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E19-4 | Invalid   | n=-1                         | CRASH (SIGSEGV)          | ASan: negative-size-param      | REJECT | REJECT: n must be a whole nu | clean | PASS   |
-| E19-5 | Invalid   | n=10 > text length           | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: n is larger than the | clean | PASS   |
-| E19-6 | Oversized | n=99999999999                | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: n must be a whole nu | clean | PASS   |
-| E20-1 | Normal    | a=1,b=2,c=3                  | pairs lost               | NOT DETECTED: pairs lost       | ACCEPT | ACCEPT                       | clean | PASS   |
-| E20-2 | Boundary  | a=1 (one pair)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E20-3 | Invalid   | a=1,b (no value)             | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: every item must look | clean | PASS   |
-| E20-4 | Invalid   | a=1;rm (bad char)            | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: input must be 1-127  | clean | PASS   |
-| E20-5 | Oversized | 200 chars                    | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: input must be 1-127  | clean | PASS   |
-+-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
++-------+-----------+------------------------------+--------------------------------+--------------------------------------+--------+----------------------------------------------+-------+--------+
+| ID    | Category  | Input                        | Vulnerable (plain)             | Vulnerable (ASan build)              | Expect | Secure result                                | S+ASn | Result |
++-------+-----------+------------------------------+--------------------------------+--------------------------------------+--------+----------------------------------------------+-------+--------+
+| E01-1 | Normal    | alice                        | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E01-2 | Boundary  | 15 chars (max)               | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E01-3 | Boundary  | 16 chars (max+1)             | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E01-4 | Oversized | 200 chars                    | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E02-1 | Normal    | bob                          | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E02-2 | Boundary  | 15 chars (fits 24)           | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E02-3 | Boundary  | 16 chars (1 over)            | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E02-4 | Oversized | 200 chars                    | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E03-1 | Normal    | hello world                  | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E03-2 | Normal    | 50% off                      | format interpreted             | NOT DETECTED: format interpreted     | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E03-3 | Invalid   | %p.%p.%p.%p                  | stack values printed           | NOT DETECTED: stack values printed   | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E03-4 | Invalid   | %s x 8                       | CRASH (SIGSEGV)                | NOT DETECTED: format interpreted     | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E04-1 | Normal    | word "cat"                   | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E04-2 | Boundary  | 7 chars (max)                | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E04-3 | Boundary  | 8 chars (max+1)              | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: word too long                        | clean | PASS   |
+| E04-4 | Oversized | 300 chars                    | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: word too long                        | clean | PASS   |
+| E05-1 | Normal    | line "hello there"           | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E05-2 | Boundary  | 15 chars (max)               | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E05-3 | Boundary  | 16 chars (max+1)             | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: line too long                        | clean | PASS   |
+| E05-4 | Invalid   | empty input (EOF)            | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: line missing                         | clean | PASS   |
+| E05-5 | Oversized | 500 chars                    | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: line too long                        | clean | PASS   |
+| E06-1 | Normal    | abc                          | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E06-2 | Boundary  | 7 chars (max)                | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E06-3 | Boundary  | 8 chars (check passes)       | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: word too long                        | clean | PASS   |
+| E06-4 | Oversized | 9 chars                      | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: word too long                        | clean | PASS   |
+| E07-1 | Normal    | tom                          | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E07-2 | Boundary  | 7 chars (max)                | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E07-3 | Boundary  | 8 chars (no '\0')            | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E07-4 | Oversized | 40 chars                     | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E08-1 | Normal    | carol                        | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E08-2 | Boundary  | 20 chars (line 31)           | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E08-3 | Boundary  | 21 chars (line 32)           | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E08-4 | Oversized | 100 chars                    | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E09-1 | Normal    | abc + def                    | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E09-2 | Boundary  | 200 + 54 (255 bytes)         | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E09-3 | Boundary  | 200 + 55 (256 -> 0)          | CRASH (SIGABRT)                | ASan: heap-buffer-overflow           | REJECT | REJECT: record too long                      | clean | PASS   |
+| E09-4 | Oversized | 200 + 100 (301 -> 45)        | CRASH (SIGABRT)                | ASan: heap-buffer-overflow           | REJECT | REJECT: record too long                      | clean | PASS   |
+| E10-1 | Normal    | month 3                      | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E10-2 | Boundary  | month 12                     | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E10-3 | Boundary  | month 13                     | bad input accepted             | ASan: global-buffer-overflow         | REJECT | REJECT: month must be a whole number from 1  | clean | PASS   |
+| E10-4 | Boundary  | month 0                      | bad input accepted             | ASan: global-buffer-overflow         | REJECT | REJECT: month must be a whole number from 1  | clean | PASS   |
+| E10-5 | Invalid   | "abc"                        | bad input accepted             | ASan: global-buffer-overflow         | REJECT | REJECT: month must be a whole number from 1  | clean | PASS   |
+| E10-6 | Oversized | month 100000                 | CRASH (SIGSEGV)                | UBSan: runtime error                 | REJECT | REJECT: month must be a whole number from 1  | clean | PASS   |
+| E11-1 | Normal    | field "bob" (padded)         | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E11-2 | Boundary  | 7 chars                      | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E11-3 | Boundary  | 8 chars (no '\0')            | over-read past field           | ASan: stack-buffer-overflow          | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E11-4 | Invalid   | empty record                 | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: name field missing                   | clean | PASS   |
+| E12-1 | Normal    | hi                           | OK (no visible effect)         | ASan: memcpy-param-overlap           | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E12-2 | Boundary  | 15 chars (max)               | OK (no visible effect)         | ASan: memcpy-param-overlap           | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E12-3 | Boundary  | 16 chars (max+1)             | bad input accepted             | ASan: memcpy-param-overlap           | REJECT | REJECT: text too long                        | clean | PASS   |
+| E12-4 | Oversized | 100 chars                    | bad input accepted             | ASan: memcpy-param-overlap           | REJECT | REJECT: text too long                        | clean | PASS   |
+| E13-1 | Normal    | dave                         | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E13-2 | Invalid   | dave; echo INJECTED          | command injected               | NOT DETECTED: command injected       | REJECT | REJECT: name must be 1-32 characters of [A-Z | clean | PASS   |
+| E13-3 | Invalid   | dave && echo INJECTED        | command injected               | NOT DETECTED: command injected       | REJECT | REJECT: name must be 1-32 characters of [A-Z | clean | PASS   |
+| E13-4 | Invalid   | $(echo INJECTED)             | command injected               | NOT DETECTED: command injected       | REJECT | REJECT: name must be 1-32 characters of [A-Z | clean | PASS   |
+| E13-5 | Oversized | 200 chars                    | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: name must be 1-32 characters of [A-Z | clean | PASS   |
+| E14-1 | Normal    | welcome.txt                  | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E14-2 | Invalid   | ../secret.txt                | secret file read               | NOT DETECTED: secret file read       | REJECT | REJECT: file name must be 1-64 characters of | clean | PASS   |
+| E14-3 | Invalid   | ../../examples/secret        | secret file read               | NOT DETECTED: secret file read       | REJECT | REJECT: file name must be 1-64 characters of | clean | PASS   |
+| E14-4 | Invalid   | missing.txt                  | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: file not found                       | clean | PASS   |
+| E14-5 | Oversized | 300-char name                | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: file name must be 1-64 characters of | clean | PASS   |
+| E15-1 | Normal    | erin stay                    | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E15-2 | Normal    | erin logout                  | freed memory printed           | ASan: heap-use-after-free            | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E15-3 | Invalid   | erin reboot                  | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: command must be 'stay' or 'logout'   | clean | PASS   |
+| E15-4 | Oversized | 100-char name logout         | bad input accepted             | ASan: heap-use-after-free            | REJECT | REJECT: name must be 1-32 characters of [A-Z | clean | PASS   |
+| E16-1 | Normal    | frank                        | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E16-2 | Boundary  | 31 chars (max)               | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E16-3 | Boundary  | 32 chars (error path)        | CRASH (SIGABRT)                | ASan: double-free                    | REJECT | REJECT: name too long                        | clean | PASS   |
+| E16-4 | Oversized | 1000 chars                   | CRASH (SIGABRT)                | ASan: double-free                    | REJECT | REJECT: name too long                        | clean | PASS   |
+| E17-1 | Normal    | 64 bytes                     | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E17-2 | Boundary  | 32 bytes (min)               | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E17-3 | Boundary  | 31 bytes (min-1)             | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: size must be a whole number from 32  | clean | PASS   |
+| E17-4 | Invalid   | "abc"                        | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: size must be a whole number from 32  | clean | PASS   |
+| E17-5 | Invalid   | -1                           | CRASH (SIGSEGV)                | ASan: allocation-size-too-big        | REJECT | REJECT: size must be a whole number from 32  | clean | PASS   |
+| E17-6 | Oversized | 10^15 bytes                  | CRASH (SIGSEGV)                | ASan: allocation-size-too-big        | REJECT | REJECT: size must be a whole number from 32  | clean | PASS   |
+| E18-1 | Normal    | hello                        | OK (no visible effect)         | ASan: heap-buffer-overflow           | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E18-2 | Boundary  | 1 char                       | OK (no visible effect)         | ASan: heap-buffer-overflow           | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E18-3 | Invalid   | empty string                 | bad input accepted             | UBSan: runtime error                 | REJECT | REJECT: text must be 1-4096 characters       | clean | PASS   |
+| E18-4 | Oversized | 5000 chars                   | bad input accepted             | ASan: heap-buffer-overflow           | REJECT | REJECT: text must be 1-4096 characters       | clean | PASS   |
+| E19-1 | Normal    | hello, n=3                   | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E19-2 | Boundary  | n=0                          | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E19-3 | Boundary  | n=31 (max)                   | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E19-4 | Invalid   | n=-1                         | CRASH (SIGSEGV)                | ASan: negative-size-param            | REJECT | REJECT: n must be a whole number from 0 to 3 | clean | PASS   |
+| E19-5 | Invalid   | n=10 > text length           | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: n is larger than the text            | clean | PASS   |
+| E19-6 | Oversized | n=99999999999                | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: n must be a whole number from 0 to 3 | clean | PASS   |
+| E20-1 | Normal    | a=1,b=2,c=3                  | pairs lost                     | NOT DETECTED: pairs lost             | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E20-2 | Boundary  | a=1 (one pair)               | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E20-3 | Invalid   | a=1,b (no value)             | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: every item must look like key=value  | clean | PASS   |
+| E20-4 | Invalid   | a=1;rm (bad char)            | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: input must be 1-127 characters of [A | clean | PASS   |
+| E20-5 | Oversized | 200 chars                    | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: input must be 1-127 characters of [A | clean | PASS   |
++-------+-----------+------------------------------+--------------------------------+--------------------------------------+--------+----------------------------------------------+-------+--------+
 Summary [examples]: 90/90 passed, 0 failed
 Full program output for every run: analysis/logs/scenarios/examples/
 [exit code: 0]
@@ -3053,7 +3053,12 @@ Summary [examples]: 34/90 passed, 56 failed
 <!-- END OUTPUT -->
 
 **Figure 26 — test table for the 20 examples**
-![Figure 26 – Examples test table](../../screenshots/26_examples_test_table.png)
+![Figure 26 – Examples test table, part 1 of 6](../../screenshots/26_examples_test_table_1.png)
+![Figure 26 – Examples test table, part 2 of 6](../../screenshots/26_examples_test_table_2.png)
+![Figure 26 – Examples test table, part 3 of 6](../../screenshots/26_examples_test_table_3.png)
+![Figure 26 – Examples test table, part 4 of 6](../../screenshots/26_examples_test_table_4.png)
+![Figure 26 – Examples test table, part 5 of 6](../../screenshots/26_examples_test_table_5.png)
+![Figure 26 – Examples test table, part 6 of 6](../../screenshots/26_examples_test_table_6.png)
 *Placeholder — capture with: `bash tests/scenarios/examples.sh` (zoom out; 90 rows — two captures are fine)*
 
 ### 9.4 Selected demonstrations
@@ -3094,11 +3099,11 @@ HELLO
 [exit code: 0]
 
 $ ./bin/examples/e18_heap_overflow_malloc/vulnerable_asan hello 2>&1 | grep -E 'ERROR|WRITE of|#1 |is located|SUMMARY'
-==75617==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x502000000015 at pc 0x7a5292eb1923 bp 0x7ffd7bead570 sp 0x7ffd7beacd18
+==187374==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x502000000015 at pc 0x7d0512cbc923 bp 0x7ffe8e364a80 sp 0x7ffe8e364228
 WRITE of size 6 at 0x502000000015 thread T0
-    #1 0x60f66d14e4b6 in main src/examples/e18_heap_overflow_malloc/vulnerable.c:33
+    #1 0x56892b1db4b6 in main src/examples/e18_heap_overflow_malloc/vulnerable.c:33
 0x502000000015 is located 0 bytes after 5-byte region [0x502000000010,0x502000000015)
-    #1 0x60f66d14e47f in main src/examples/e18_heap_overflow_malloc/vulnerable.c:29
+    #1 0x56892b1db47f in main src/examples/e18_heap_overflow_malloc/vulnerable.c:29
 SUMMARY: AddressSanitizer: heap-buffer-overflow ../../../../src/libsanitizer/asan/asan_interceptors.cpp:563 in strcpy
 [exit code: 0]
 
@@ -3108,12 +3113,12 @@ free(): double free detected in tcache 2
 [exit code: 134]
 
 $ ./bin/examples/e15_use_after_free/vulnerable_asan erin logout 2>&1 | grep -E 'ERROR|READ of|#[0-9] .*main|SUMMARY' | head -n 6
-==75640==ERROR: AddressSanitizer: heap-use-after-free on address 0x502000000010 at pc 0x7aeb6590ea6a bp 0x7ffe3ef23cb0 sp 0x7ffe3ef23428
+==187390==ERROR: AddressSanitizer: heap-use-after-free on address 0x502000000010 at pc 0x7d516f8fda6a bp 0x7ffe898ec060 sp 0x7ffe898eb7d8
 READ of size 2 at 0x502000000010 thread T0
-    #3 0x5cced659b4e5 in main src/examples/e15_use_after_free/vulnerable.c:36
-    #4 0x7aeb6506e1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
-    #5 0x7aeb6506e28a in __libc_start_main_impl ../csu/libc-start.c:360
-    #1 0x5cced659b4d1 in main src/examples/e15_use_after_free/vulnerable.c:34
+    #3 0x62d9a14154e5 in main src/examples/e15_use_after_free/vulnerable.c:36
+    #4 0x7d516f05d1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #5 0x7d516f05d28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #1 0x62d9a14154d1 in main src/examples/e15_use_after_free/vulnerable.c:34
 [exit code: 0]
 ```
 <!-- END OUTPUT -->
@@ -3311,11 +3316,11 @@ gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wfor
 gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e04_scanf_no_width/vulnerable.c -o bin/examples/e04_scanf_no_width/vulnerable_asan -fsanitize=address,undefined
 gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e04_scanf_no_width/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e04_scanf_no_width/secure_asan -fsanitize=address,undefined
 gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e05_gets/vulnerable.c -o bin/examples/e05_gets/vulnerable 
-/usr/bin/ld: /tmp/ccHYQycv.o: in function `main':
+/usr/bin/ld: /tmp/ccuw0Tpk.o: in function `main':
 src/examples/e05_gets/vulnerable.c:22:(.text+0x14): warning: the `gets' function is dangerous and should not be used.
 gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e05_gets/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e05_gets/secure -pie -Wl,-z,relro,-z,now
 gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e05_gets/vulnerable.c -o bin/examples/e05_gets/vulnerable_asan -fsanitize=address,undefined
-/usr/bin/ld: /tmp/ccpsuIhY.o: in function `main':
+/usr/bin/ld: /tmp/cceQxvfJ.o: in function `main':
 src/examples/e05_gets/vulnerable.c:22:(.text+0x7b): warning: the `gets' function is dangerous and should not be used.
 gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e05_gets/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e05_gets/secure_asan -fsanitize=address,undefined
 gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e06_off_by_one_loop/vulnerable.c -o bin/examples/e06_off_by_one_loop/vulnerable 

@@ -1,100 +1,100 @@
 $ bash tests/scenarios/examples.sh | grep -v '^TF_RESULT'
 
 === Scenario suite: examples (vulnerable vs secure) ===
-+-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
-| ID    | Category  | Input                        | Vulnerable (plain)       | Vulnerable (ASan build)        | Expect | Secure result                | S+ASn | Result |
-+-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
-| E01-1 | Normal    | alice                        | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E01-2 | Boundary  | 15 chars (max)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E01-3 | Boundary  | 16 chars (max+1)             | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E01-4 | Oversized | 200 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E02-1 | Normal    | bob                          | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E02-2 | Boundary  | 15 chars (fits 24)           | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E02-3 | Boundary  | 16 chars (1 over)            | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E02-4 | Oversized | 200 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E03-1 | Normal    | hello world                  | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E03-2 | Normal    | 50% off                      | format interpreted       | NOT DETECTED: format interpret | ACCEPT | ACCEPT                       | clean | PASS   |
-| E03-3 | Invalid   | %p.%p.%p.%p                  | stack values printed     | NOT DETECTED: stack values pri | ACCEPT | ACCEPT                       | clean | PASS   |
-| E03-4 | Invalid   | %s x 8                       | CRASH (SIGSEGV)          | NOT DETECTED: format interpret | ACCEPT | ACCEPT                       | clean | PASS   |
-| E04-1 | Normal    | word "cat"                   | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E04-2 | Boundary  | 7 chars (max)                | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E04-3 | Boundary  | 8 chars (max+1)              | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: word too long        | clean | PASS   |
-| E04-4 | Oversized | 300 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: word too long        | clean | PASS   |
-| E05-1 | Normal    | line "hello there"           | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E05-2 | Boundary  | 15 chars (max)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E05-3 | Boundary  | 16 chars (max+1)             | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: line too long        | clean | PASS   |
-| E05-4 | Invalid   | empty input (EOF)            | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: line missing         | clean | PASS   |
-| E05-5 | Oversized | 500 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: line too long        | clean | PASS   |
-| E06-1 | Normal    | abc                          | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E06-2 | Boundary  | 7 chars (max)                | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E06-3 | Boundary  | 8 chars (check passes)       | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: word too long        | clean | PASS   |
-| E06-4 | Oversized | 9 chars                      | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: word too long        | clean | PASS   |
-| E07-1 | Normal    | tom                          | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E07-2 | Boundary  | 7 chars (max)                | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E07-3 | Boundary  | 8 chars (no '\0')            | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E07-4 | Oversized | 40 chars                     | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E08-1 | Normal    | carol                        | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E08-2 | Boundary  | 20 chars (line 31)           | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E08-3 | Boundary  | 21 chars (line 32)           | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E08-4 | Oversized | 100 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
-| E09-1 | Normal    | abc + def                    | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E09-2 | Boundary  | 200 + 54 (255 bytes)         | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E09-3 | Boundary  | 200 + 55 (256 -> 0)          | CRASH (SIGABRT)          | ASan: heap-buffer-overflow     | REJECT | REJECT: record too long      | clean | PASS   |
-| E09-4 | Oversized | 200 + 100 (301 -> 45)        | CRASH (SIGABRT)          | ASan: heap-buffer-overflow     | REJECT | REJECT: record too long      | clean | PASS   |
-| E10-1 | Normal    | month 3                      | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E10-2 | Boundary  | month 12                     | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E10-3 | Boundary  | month 13                     | bad input accepted       | ASan: global-buffer-overflow   | REJECT | REJECT: month must be a whol | clean | PASS   |
-| E10-4 | Boundary  | month 0                      | bad input accepted       | ASan: global-buffer-overflow   | REJECT | REJECT: month must be a whol | clean | PASS   |
-| E10-5 | Invalid   | "abc"                        | bad input accepted       | ASan: global-buffer-overflow   | REJECT | REJECT: month must be a whol | clean | PASS   |
-| E10-6 | Oversized | month 100000                 | CRASH (SIGSEGV)          | UBSan: runtime error           | REJECT | REJECT: month must be a whol | clean | PASS   |
-| E11-1 | Normal    | field "bob" (padded)         | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E11-2 | Boundary  | 7 chars                      | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E11-3 | Boundary  | 8 chars (no '\0')            | over-read past field     | ASan: stack-buffer-overflow    | ACCEPT | ACCEPT                       | clean | PASS   |
-| E11-4 | Invalid   | empty record                 | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: name field missing   | clean | PASS   |
-| E12-1 | Normal    | hi                           | OK (no visible effect)   | ASan: memcpy-param-overlap     | ACCEPT | ACCEPT                       | clean | PASS   |
-| E12-2 | Boundary  | 15 chars (max)               | OK (no visible effect)   | ASan: memcpy-param-overlap     | ACCEPT | ACCEPT                       | clean | PASS   |
-| E12-3 | Boundary  | 16 chars (max+1)             | bad input accepted       | ASan: memcpy-param-overlap     | REJECT | REJECT: text too long        | clean | PASS   |
-| E12-4 | Oversized | 100 chars                    | bad input accepted       | ASan: memcpy-param-overlap     | REJECT | REJECT: text too long        | clean | PASS   |
-| E13-1 | Normal    | dave                         | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E13-2 | Invalid   | dave; echo INJECTED          | command injected         | NOT DETECTED: command injected | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
-| E13-3 | Invalid   | dave && echo INJECTED        | command injected         | NOT DETECTED: command injected | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
-| E13-4 | Invalid   | $(echo INJECTED)             | command injected         | NOT DETECTED: command injected | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
-| E13-5 | Oversized | 200 chars                    | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
-| E14-1 | Normal    | welcome.txt                  | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E14-2 | Invalid   | ../secret.txt                | secret file read         | NOT DETECTED: secret file read | REJECT | REJECT: file name must be 1- | clean | PASS   |
-| E14-3 | Invalid   | ../../examples/secret        | secret file read         | NOT DETECTED: secret file read | REJECT | REJECT: file name must be 1- | clean | PASS   |
-| E14-4 | Invalid   | missing.txt                  | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: file not found       | clean | PASS   |
-| E14-5 | Oversized | 300-char name                | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: file name must be 1- | clean | PASS   |
-| E15-1 | Normal    | erin stay                    | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E15-2 | Normal    | erin logout                  | freed memory printed     | ASan: heap-use-after-free      | ACCEPT | ACCEPT                       | clean | PASS   |
-| E15-3 | Invalid   | erin reboot                  | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: command must be 'sta | clean | PASS   |
-| E15-4 | Oversized | 100-char name logout         | bad input accepted       | ASan: heap-use-after-free      | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
-| E16-1 | Normal    | frank                        | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E16-2 | Boundary  | 31 chars (max)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E16-3 | Boundary  | 32 chars (error path)        | CRASH (SIGABRT)          | ASan: double-free              | REJECT | REJECT: name too long        | clean | PASS   |
-| E16-4 | Oversized | 1000 chars                   | CRASH (SIGABRT)          | ASan: double-free              | REJECT | REJECT: name too long        | clean | PASS   |
-| E17-1 | Normal    | 64 bytes                     | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E17-2 | Boundary  | 32 bytes (min)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E17-3 | Boundary  | 31 bytes (min-1)             | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: size must be a whole | clean | PASS   |
-| E17-4 | Invalid   | "abc"                        | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: size must be a whole | clean | PASS   |
-| E17-5 | Invalid   | -1                           | CRASH (SIGSEGV)          | ASan: allocation-size-too-big  | REJECT | REJECT: size must be a whole | clean | PASS   |
-| E17-6 | Oversized | 10^15 bytes                  | CRASH (SIGSEGV)          | ASan: allocation-size-too-big  | REJECT | REJECT: size must be a whole | clean | PASS   |
-| E18-1 | Normal    | hello                        | OK (no visible effect)   | ASan: heap-buffer-overflow     | ACCEPT | ACCEPT                       | clean | PASS   |
-| E18-2 | Boundary  | 1 char                       | OK (no visible effect)   | ASan: heap-buffer-overflow     | ACCEPT | ACCEPT                       | clean | PASS   |
-| E18-3 | Invalid   | empty string                 | bad input accepted       | UBSan: runtime error           | REJECT | REJECT: text must be 1-4096  | clean | PASS   |
-| E18-4 | Oversized | 5000 chars                   | bad input accepted       | ASan: heap-buffer-overflow     | REJECT | REJECT: text must be 1-4096  | clean | PASS   |
-| E19-1 | Normal    | hello, n=3                   | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E19-2 | Boundary  | n=0                          | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E19-3 | Boundary  | n=31 (max)                   | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E19-4 | Invalid   | n=-1                         | CRASH (SIGSEGV)          | ASan: negative-size-param      | REJECT | REJECT: n must be a whole nu | clean | PASS   |
-| E19-5 | Invalid   | n=10 > text length           | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: n is larger than the | clean | PASS   |
-| E19-6 | Oversized | n=99999999999                | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: n must be a whole nu | clean | PASS   |
-| E20-1 | Normal    | a=1,b=2,c=3                  | pairs lost               | NOT DETECTED: pairs lost       | ACCEPT | ACCEPT                       | clean | PASS   |
-| E20-2 | Boundary  | a=1 (one pair)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
-| E20-3 | Invalid   | a=1,b (no value)             | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: every item must look | clean | PASS   |
-| E20-4 | Invalid   | a=1;rm (bad char)            | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: input must be 1-127  | clean | PASS   |
-| E20-5 | Oversized | 200 chars                    | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: input must be 1-127  | clean | PASS   |
-+-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
++-------+-----------+------------------------------+--------------------------------+--------------------------------------+--------+----------------------------------------------+-------+--------+
+| ID    | Category  | Input                        | Vulnerable (plain)             | Vulnerable (ASan build)              | Expect | Secure result                                | S+ASn | Result |
++-------+-----------+------------------------------+--------------------------------+--------------------------------------+--------+----------------------------------------------+-------+--------+
+| E01-1 | Normal    | alice                        | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E01-2 | Boundary  | 15 chars (max)               | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E01-3 | Boundary  | 16 chars (max+1)             | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E01-4 | Oversized | 200 chars                    | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E02-1 | Normal    | bob                          | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E02-2 | Boundary  | 15 chars (fits 24)           | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E02-3 | Boundary  | 16 chars (1 over)            | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E02-4 | Oversized | 200 chars                    | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E03-1 | Normal    | hello world                  | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E03-2 | Normal    | 50% off                      | format interpreted             | NOT DETECTED: format interpreted     | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E03-3 | Invalid   | %p.%p.%p.%p                  | stack values printed           | NOT DETECTED: stack values printed   | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E03-4 | Invalid   | %s x 8                       | CRASH (SIGSEGV)                | NOT DETECTED: format interpreted     | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E04-1 | Normal    | word "cat"                   | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E04-2 | Boundary  | 7 chars (max)                | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E04-3 | Boundary  | 8 chars (max+1)              | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: word too long                        | clean | PASS   |
+| E04-4 | Oversized | 300 chars                    | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: word too long                        | clean | PASS   |
+| E05-1 | Normal    | line "hello there"           | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E05-2 | Boundary  | 15 chars (max)               | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E05-3 | Boundary  | 16 chars (max+1)             | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: line too long                        | clean | PASS   |
+| E05-4 | Invalid   | empty input (EOF)            | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: line missing                         | clean | PASS   |
+| E05-5 | Oversized | 500 chars                    | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: line too long                        | clean | PASS   |
+| E06-1 | Normal    | abc                          | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E06-2 | Boundary  | 7 chars (max)                | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E06-3 | Boundary  | 8 chars (check passes)       | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: word too long                        | clean | PASS   |
+| E06-4 | Oversized | 9 chars                      | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: word too long                        | clean | PASS   |
+| E07-1 | Normal    | tom                          | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E07-2 | Boundary  | 7 chars (max)                | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E07-3 | Boundary  | 8 chars (no '\0')            | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E07-4 | Oversized | 40 chars                     | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E08-1 | Normal    | carol                        | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E08-2 | Boundary  | 20 chars (line 31)           | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E08-3 | Boundary  | 21 chars (line 32)           | bad input accepted             | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E08-4 | Oversized | 100 chars                    | CRASH (SIGSEGV)                | ASan: stack-buffer-overflow          | REJECT | REJECT: name too long                        | clean | PASS   |
+| E09-1 | Normal    | abc + def                    | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E09-2 | Boundary  | 200 + 54 (255 bytes)         | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E09-3 | Boundary  | 200 + 55 (256 -> 0)          | CRASH (SIGABRT)                | ASan: heap-buffer-overflow           | REJECT | REJECT: record too long                      | clean | PASS   |
+| E09-4 | Oversized | 200 + 100 (301 -> 45)        | CRASH (SIGABRT)                | ASan: heap-buffer-overflow           | REJECT | REJECT: record too long                      | clean | PASS   |
+| E10-1 | Normal    | month 3                      | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E10-2 | Boundary  | month 12                     | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E10-3 | Boundary  | month 13                     | bad input accepted             | ASan: global-buffer-overflow         | REJECT | REJECT: month must be a whole number from 1  | clean | PASS   |
+| E10-4 | Boundary  | month 0                      | bad input accepted             | ASan: global-buffer-overflow         | REJECT | REJECT: month must be a whole number from 1  | clean | PASS   |
+| E10-5 | Invalid   | "abc"                        | bad input accepted             | ASan: global-buffer-overflow         | REJECT | REJECT: month must be a whole number from 1  | clean | PASS   |
+| E10-6 | Oversized | month 100000                 | CRASH (SIGSEGV)                | UBSan: runtime error                 | REJECT | REJECT: month must be a whole number from 1  | clean | PASS   |
+| E11-1 | Normal    | field "bob" (padded)         | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E11-2 | Boundary  | 7 chars                      | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E11-3 | Boundary  | 8 chars (no '\0')            | over-read past field           | ASan: stack-buffer-overflow          | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E11-4 | Invalid   | empty record                 | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: name field missing                   | clean | PASS   |
+| E12-1 | Normal    | hi                           | OK (no visible effect)         | ASan: memcpy-param-overlap           | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E12-2 | Boundary  | 15 chars (max)               | OK (no visible effect)         | ASan: memcpy-param-overlap           | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E12-3 | Boundary  | 16 chars (max+1)             | bad input accepted             | ASan: memcpy-param-overlap           | REJECT | REJECT: text too long                        | clean | PASS   |
+| E12-4 | Oversized | 100 chars                    | bad input accepted             | ASan: memcpy-param-overlap           | REJECT | REJECT: text too long                        | clean | PASS   |
+| E13-1 | Normal    | dave                         | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E13-2 | Invalid   | dave; echo INJECTED          | command injected               | NOT DETECTED: command injected       | REJECT | REJECT: name must be 1-32 characters of [A-Z | clean | PASS   |
+| E13-3 | Invalid   | dave && echo INJECTED        | command injected               | NOT DETECTED: command injected       | REJECT | REJECT: name must be 1-32 characters of [A-Z | clean | PASS   |
+| E13-4 | Invalid   | $(echo INJECTED)             | command injected               | NOT DETECTED: command injected       | REJECT | REJECT: name must be 1-32 characters of [A-Z | clean | PASS   |
+| E13-5 | Oversized | 200 chars                    | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: name must be 1-32 characters of [A-Z | clean | PASS   |
+| E14-1 | Normal    | welcome.txt                  | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E14-2 | Invalid   | ../secret.txt                | secret file read               | NOT DETECTED: secret file read       | REJECT | REJECT: file name must be 1-64 characters of | clean | PASS   |
+| E14-3 | Invalid   | ../../examples/secret        | secret file read               | NOT DETECTED: secret file read       | REJECT | REJECT: file name must be 1-64 characters of | clean | PASS   |
+| E14-4 | Invalid   | missing.txt                  | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: file not found                       | clean | PASS   |
+| E14-5 | Oversized | 300-char name                | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: file name must be 1-64 characters of | clean | PASS   |
+| E15-1 | Normal    | erin stay                    | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E15-2 | Normal    | erin logout                  | freed memory printed           | ASan: heap-use-after-free            | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E15-3 | Invalid   | erin reboot                  | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: command must be 'stay' or 'logout'   | clean | PASS   |
+| E15-4 | Oversized | 100-char name logout         | bad input accepted             | ASan: heap-use-after-free            | REJECT | REJECT: name must be 1-32 characters of [A-Z | clean | PASS   |
+| E16-1 | Normal    | frank                        | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E16-2 | Boundary  | 31 chars (max)               | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E16-3 | Boundary  | 32 chars (error path)        | CRASH (SIGABRT)                | ASan: double-free                    | REJECT | REJECT: name too long                        | clean | PASS   |
+| E16-4 | Oversized | 1000 chars                   | CRASH (SIGABRT)                | ASan: double-free                    | REJECT | REJECT: name too long                        | clean | PASS   |
+| E17-1 | Normal    | 64 bytes                     | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E17-2 | Boundary  | 32 bytes (min)               | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E17-3 | Boundary  | 31 bytes (min-1)             | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: size must be a whole number from 32  | clean | PASS   |
+| E17-4 | Invalid   | "abc"                        | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: size must be a whole number from 32  | clean | PASS   |
+| E17-5 | Invalid   | -1                           | CRASH (SIGSEGV)                | ASan: allocation-size-too-big        | REJECT | REJECT: size must be a whole number from 32  | clean | PASS   |
+| E17-6 | Oversized | 10^15 bytes                  | CRASH (SIGSEGV)                | ASan: allocation-size-too-big        | REJECT | REJECT: size must be a whole number from 32  | clean | PASS   |
+| E18-1 | Normal    | hello                        | OK (no visible effect)         | ASan: heap-buffer-overflow           | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E18-2 | Boundary  | 1 char                       | OK (no visible effect)         | ASan: heap-buffer-overflow           | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E18-3 | Invalid   | empty string                 | bad input accepted             | UBSan: runtime error                 | REJECT | REJECT: text must be 1-4096 characters       | clean | PASS   |
+| E18-4 | Oversized | 5000 chars                   | bad input accepted             | ASan: heap-buffer-overflow           | REJECT | REJECT: text must be 1-4096 characters       | clean | PASS   |
+| E19-1 | Normal    | hello, n=3                   | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E19-2 | Boundary  | n=0                          | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E19-3 | Boundary  | n=31 (max)                   | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E19-4 | Invalid   | n=-1                         | CRASH (SIGSEGV)                | ASan: negative-size-param            | REJECT | REJECT: n must be a whole number from 0 to 3 | clean | PASS   |
+| E19-5 | Invalid   | n=10 > text length           | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: n is larger than the text            | clean | PASS   |
+| E19-6 | Oversized | n=99999999999                | OK (no visible effect)         | OK (no visible effect)               | REJECT | REJECT: n must be a whole number from 0 to 3 | clean | PASS   |
+| E20-1 | Normal    | a=1,b=2,c=3                  | pairs lost                     | NOT DETECTED: pairs lost             | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E20-2 | Boundary  | a=1 (one pair)               | OK (no visible effect)         | OK (no visible effect)               | ACCEPT | ACCEPT                                       | clean | PASS   |
+| E20-3 | Invalid   | a=1,b (no value)             | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: every item must look like key=value  | clean | PASS   |
+| E20-4 | Invalid   | a=1;rm (bad char)            | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: input must be 1-127 characters of [A | clean | PASS   |
+| E20-5 | Oversized | 200 chars                    | bad input accepted             | NOT DETECTED: bad input accepted     | REJECT | REJECT: input must be 1-127 characters of [A | clean | PASS   |
++-------+-----------+------------------------------+--------------------------------+--------------------------------------+--------+----------------------------------------------+-------+--------+
 Summary [examples]: 90/90 passed, 0 failed
 Full program output for every run: analysis/logs/scenarios/examples/
 [exit code: 0]

@@ -42,11 +42,11 @@ gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wfor
 gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e04_scanf_no_width/vulnerable.c -o bin/examples/e04_scanf_no_width/vulnerable_asan -fsanitize=address,undefined
 gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e04_scanf_no_width/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e04_scanf_no_width/secure_asan -fsanitize=address,undefined
 gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e05_gets/vulnerable.c -o bin/examples/e05_gets/vulnerable 
-/usr/bin/ld: /tmp/ccHYQycv.o: in function `main':
+/usr/bin/ld: /tmp/ccuw0Tpk.o: in function `main':
 src/examples/e05_gets/vulnerable.c:22:(.text+0x14): warning: the `gets' function is dangerous and should not be used.
 gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e05_gets/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e05_gets/secure -pie -Wl,-z,relro,-z,now
 gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e05_gets/vulnerable.c -o bin/examples/e05_gets/vulnerable_asan -fsanitize=address,undefined
-/usr/bin/ld: /tmp/ccpsuIhY.o: in function `main':
+/usr/bin/ld: /tmp/cceQxvfJ.o: in function `main':
 src/examples/e05_gets/vulnerable.c:22:(.text+0x7b): warning: the `gets' function is dangerous and should not be used.
 gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e05_gets/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e05_gets/secure_asan -fsanitize=address,undefined
 gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e06_off_by_one_loop/vulnerable.c -o bin/examples/e06_off_by_one_loop/vulnerable 

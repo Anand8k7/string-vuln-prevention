@@ -73,35 +73,37 @@ make clean && make all asan && make test >/dev/null   # build everything once
 
 | # | Filename | Command | Report section |
 |---|----------|---------|----------------|
-| 26 | `26_examples_test_table.png` | `bash tests/scenarios/examples.sh` (90 rows, ≈170 columns wide — two captures are fine) | 9.3 Examples test run (Figure 26) |
+| 26 | `26_examples_test_table_1.png` … `_6.png` (6 parts) | `bash tests/scenarios/examples.sh` (90 rows, ≈170 columns wide — two captures are fine) | 9.3 Examples test run (Figure 26) |
 | 27 | `27_examples_demos.png` | `./bin/examples/e13_command_injection/vulnerable 'dave; echo INJECTED'; ./bin/examples/e13_command_injection/secure 'dave; echo INJECTED'; ./bin/examples/e14_path_traversal/vulnerable ../secret.txt; ./bin/examples/e14_path_traversal/secure ../secret.txt` | 9.4 Examples demonstrations (Figure 27) |
 
 ## Checklist
 
-- [ ] 01_toolchain_versions.png
-- [ ] 02_repo_structure.png
-- [ ] 03_make_help.png
-- [ ] 04_unit_tests_safe_string.png
-- [ ] 05_unit_tests_input_handler.png
-- [ ] 06_valgrind_unit_tests.png
-- [ ] 07_q1_vuln_normal_vs_overflow.png
-- [ ] 08_q1_vuln_segfault.png
-- [ ] 09_q1_asan_stack_overflow.png
-- [ ] 10_q1_asan_misses_intra_struct.png
-- [ ] 11_q1_secure_rejects.png
-- [ ] 12_q1_test_table.png
-- [ ] 13_q2_gcc_warnings.png
-- [ ] 14_q2_vuln_format_leak.png
-- [ ] 15_q2_vuln_validation.png
-- [ ] 16_q2_vuln_crash.png
-- [ ] 17_q2_secure.png
-- [ ] 18_q2_asan_record_overflow.png
-- [ ] 19_q2_test_table.png
-- [ ] 20_all_tests_summary.png
-- [ ] 21_q1_valgrind_ret_overwrite.png
-- [ ] 22_cppcheck_before_after.png
-- [ ] 23_banned_api_scan.png
-- [ ] 24_analysis_summary.png
-- [ ] 25_ci_github_actions.png
-- [ ] 26_examples_test_table.png
-- [ ] 27_examples_demos.png
+All screenshots captured on 2026-11-20/21; the originals that were not used are in `unused/`.
+
+- [x] 01_toolchain_versions.png
+- [x] 02_repo_structure.png
+- [x] 03_make_help.png
+- [x] 04_unit_tests_safe_string.png
+- [x] 05_unit_tests_input_handler.png
+- [x] 06_valgrind_unit_tests.png
+- [x] 07_q1_vuln_normal_vs_overflow.png
+- [x] 08_q1_vuln_segfault.png
+- [x] 09_q1_asan_stack_overflow.png
+- [x] 10_q1_asan_misses_intra_struct.png
+- [x] 11_q1_secure_rejects.png
+- [x] 12_q1_test_table.png
+- [x] 13_q2_gcc_warnings.png
+- [x] 14_q2_vuln_format_leak.png
+- [x] 15_q2_vuln_validation.png
+- [x] 16_q2_vuln_crash.png
+- [x] 17_q2_secure.png
+- [x] 18_q2_asan_record_overflow.png
+- [x] 19_q2_test_table.png
+- [x] 20_all_tests_summary.png
+- [x] 21_q1_valgrind_ret_overwrite.png
+- [x] 22_cppcheck_before_after.png
+- [x] 23_banned_api_scan.png
+- [x] 24_analysis_summary.png
+- [x] 25_ci_github_actions.png
+- [x] 26_examples_test_table_1.png … _6.png
+- [x] 27_examples_demos.png
