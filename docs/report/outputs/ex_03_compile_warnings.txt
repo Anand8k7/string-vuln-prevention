@@ -1,0 +1,7 @@
+$ for f in src/examples/*/vulnerable.c; do gcc -std=c11 -Wall -Wextra -O2 "$f" -o /dev/null; done 2>&1 | grep -E 'warning'
+src/examples/e03_format_string/vulnerable.c:21:5: warning: format not a string literal and no format arguments [-Wformat-security]
+vulnerable.c:(.text.startup+0x20): warning: the `gets' function is dangerous and should not be used.
+src/examples/e07_strncpy_no_terminator/vulnerable.c:24:5: warning: ‘__builtin_strncpy’ specified bound 8 equals destination size [-Wstringop-truncation]
+/usr/include/x86_64-linux-gnu/bits/string_fortified.h:29:10: warning: ‘__builtin___memcpy_chk’ forming offset [16, 63] is out of the bounds [0, 16] of object ‘dst’ with type ‘char[16]’ [-Warray-bounds=]
+[exit code: 0]
+

@@ -58,7 +58,8 @@ User Input → Input Validation → Length & Boundary Checking
 ├── src/
 │   ├── vulnerable/   deliberately unsafe demo programs (local input only)
 │   ├── secure/       fixed versions of the same programs
-│   └── lib/          safe_string.h/.c + input handler
+│   ├── lib/          safe_string.h/.c + input handler
+│   └── examples/     20 small examples, each vulnerable.c + secure.c
 ├── tests/            test runner that prints a PASS/FAIL table
 ├── analysis/         cppcheck + ASan + valgrind script; logs/ holds output
 ├── docs/report/      final project report (report.md)
@@ -92,6 +93,7 @@ make            # build vulnerable + secure programs
 make vulnerable # only the unsafe demos   -> bin/vulnerable/
 make secure     # only the fixed versions -> bin/secure/
 make asan       # both, with AddressSanitizer + UBSan -> bin/asan/
+make examples   # the 20 small examples, 4 builds each -> bin/examples/
 make test       # run the test suite (PASS/FAIL table)
 make analyze    # cppcheck + ASan + valgrind, logs in analysis/logs/
 make clean      # remove build output and logs
@@ -165,6 +167,38 @@ bash tests/scenarios/q2_format.sh                                     # 26 cases
 | `src/vulnerable/q2_format.c` | `scanf("%s")`, unchecked `scanf("%d")`, `sprintf` into `record[64]`, `printf(msg)` |
 | `src/secure/q2_format.c` | `fgets`-based `input_read_line`, whitelist validation, `validate_integer` (1–120), `safe_format` (reject on `SS_TRUNCATED`), fixed format strings only |
 | `tests/scenarios/q2_format.sh` | Runs every case on 4 builds; for accepted input it also checks that the message is echoed **literally** and the simulated secret never appears |
+
+### 20 additional examples (`src/examples/`)
+
+Each directory `src/examples/eNN_name/` holds a `vulnerable.c` (bug marked
+`BUG:`) and a `secure.c` (fix marked `FIX:`). `make examples` builds four
+versions of each into `bin/examples/eNN_name/`; `tests/scenarios/examples.sh`
+runs 90 test cases on them (part of `make test`).
+
+| # | Example | Vulnerability | Fix |
+|---|---------|---------------|-----|
+| 1 | `e01_strcpy_overflow` | `strcpy` overflow | `safe_copy` |
+| 2 | `e02_strcat_overflow` | `strcat` overflow | `safe_concat` |
+| 3 | `e03_format_string` | `printf(user_input)` | `printf("%s", …)` |
+| 4 | `e04_scanf_no_width` | `scanf("%s")` without width | `scanf("%7s")` + check |
+| 5 | `e05_gets` | `gets()` | `input_read_line` (`fgets`) |
+| 6 | `e06_off_by_one_loop` | off-by-one in a loop | `>=` check, `i < len`, explicit `'\0'` |
+| 7 | `e07_strncpy_no_terminator` | missing `'\0'` after `strncpy` | `safe_copy` |
+| 8 | `e08_sprintf_overflow` | `sprintf` | `snprintf` + return check |
+| 9 | `e09_length_integer_overflow` | integer overflow in a length calculation | `size_t` + wrap and limit checks |
+| 10 | `e10_out_of_bounds_index` | out-of-bounds index | `validate_integer` range |
+| 11 | `e11_unterminated_strlen` | `strlen` on unterminated data | `safe_strlen` + `%.*s` |
+| 12 | `e12_memcpy_wrong_size` | `memcpy` with the wrong size | size from data, checked against destination |
+| 13 | `e13_command_injection` | command injection via `system()` | no shell + whitelist |
+| 14 | `e14_path_traversal` | path traversal | whitelist + `realpath` containment |
+| 15 | `e15_use_after_free` | use-after-free | use, free once, `NULL` |
+| 16 | `e16_double_free` | double free | single clean-up point |
+| 17 | `e17_unchecked_malloc` | unchecked `malloc` | range check + `NULL` check |
+| 18 | `e18_heap_overflow_malloc` | heap overflow (`malloc(strlen)`) | `len + 1` + `safe_copy` |
+| 19 | `e19_signed_unsigned_length` | signed/unsigned length mismatch | both bounds checked, `size_t` |
+| 20 | `e20_strtok_reentrancy` | `strtok` vs `strtok_r` | `strtok_r` + validation |
+
+Results and the full comparison table are in Section 9 of the report.
 
 ### Analysis (`make analyze`)
 

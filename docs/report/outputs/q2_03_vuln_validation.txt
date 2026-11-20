@@ -23,7 +23,7 @@ Saved record: name=alice age=-1 msg=hello
 [exit code: 0]
 
 $ printf 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n21\nhello\n' | ./bin/vulnerable/q2_format
-bash: line 1: 64057 Done                    printf 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n21\nhello\n'
-     64058 Segmentation fault      (core dumped) | ./bin/vulnerable/q2_format
+bash: line 1: 66850 Done                    printf 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n21\nhello\n'
+     66851 Segmentation fault      (core dumped) | ./bin/vulnerable/q2_format
 [exit code: 139]
 

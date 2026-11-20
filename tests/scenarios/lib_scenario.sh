@@ -35,12 +35,18 @@ SC_ROWS=()
 SC_LOGDIR=""
 
 sc_init() {
-    SC_LOGDIR="analysis/logs/scenarios/$PROG"
+    # Binaries under test. Defaults follow the Q1/Q2 layout; a scenario
+    # script may set SC_BIN_V / SC_BIN_VA / SC_BIN_S / SC_BIN_SA and
+    # SC_LOGNAME before calling sc_init (used by tests/scenarios/examples.sh).
+    SC_BIN_V="${SC_BIN_V:-bin/vulnerable/$PROG}"
+    SC_BIN_VA="${SC_BIN_VA:-bin/asan/vulnerable_$PROG}"
+    SC_BIN_S="${SC_BIN_S:-bin/secure/$PROG}"
+    SC_BIN_SA="${SC_BIN_SA:-bin/asan/secure_$PROG}"
+    SC_LOGDIR="analysis/logs/scenarios/${SC_LOGNAME:-$PROG}"
     mkdir -p "$SC_LOGDIR"
     rm -f "$SC_LOGDIR"/*.log
     local b
-    for b in "bin/vulnerable/$PROG" "bin/asan/vulnerable_$PROG" \
-             "bin/secure/$PROG" "bin/asan/secure_$PROG"; do
+    for b in "$SC_BIN_V" "$SC_BIN_VA" "$SC_BIN_S" "$SC_BIN_SA"; do
         if [ ! -x "$b" ]; then
             echo "Missing $b - run 'make all asan' first." >&2
             exit 1
@@ -86,7 +92,10 @@ sc_classify_vuln() {
 
 sc_classify_asan() {
     local log="$1" rc="$2" kind
-    kind="$(grep -o 'AddressSanitizer: [a-z-]*' "$log" | head -n1 | cut -d' ' -f2)"
+    # The SUMMARY line names the error class (e.g. double-free,
+    # allocation-size-too-big); fall back to the ERROR line.
+    kind="$(grep -o 'SUMMARY: AddressSanitizer: [a-z-]*' "$log" | head -n1 | cut -d' ' -f3)"
+    [ -n "$kind" ] || kind="$(grep -o 'AddressSanitizer: [a-z-]*' "$log" | head -n1 | cut -d' ' -f2)"
     if [ -n "$kind" ]; then echo "ASan: $kind"; return; fi
     if grep -q 'LeakSanitizer' "$log"; then echo "LSan: memory leak"; return; fi
     if grep -q 'runtime error:' "$log"; then echo "UBSan: runtime error"; return; fi
@@ -131,10 +140,10 @@ sc_case() {
     local lsa="$SC_LOGDIR/${id}_secure_asan.log"
     local rv ra rs rsa v a s sa result
 
-    sc_run "$lv"  "bin/vulnerable/$PROG"      "$@"; rv=$?
-    sc_run "$la"  "bin/asan/vulnerable_$PROG" "$@"; ra=$?
-    sc_run "$ls"  "bin/secure/$PROG"          "$@"; rs=$?
-    sc_run "$lsa" "bin/asan/secure_$PROG"     "$@"; rsa=$?
+    sc_run "$lv"  "$SC_BIN_V"  "$@"; rv=$?
+    sc_run "$la"  "$SC_BIN_VA" "$@"; ra=$?
+    sc_run "$ls"  "$SC_BIN_S"  "$@"; rs=$?
+    sc_run "$lsa" "$SC_BIN_SA" "$@"; rsa=$?
 
     v="$(sc_classify_vuln "$lv" "$rv")"
     a="$(sc_classify_asan "$la" "$ra")"

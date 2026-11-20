@@ -141,6 +141,27 @@ run q2_05_secure_runs.txt \
 run q2_06_tests.txt "bash tests/scenarios/q2_format.sh | grep -v '^TF_RESULT'"
 negative_control q2_format q2_07_negative_control.txt
 
+# ---------------------------------------------------------------- 20 examples
+run ex_01_tests.txt "bash tests/scenarios/examples.sh | grep -v '^TF_RESULT'"
+run ex_02_negative_control.txt \
+    "EX_NEGATIVE_CONTROL=1 bash tests/scenarios/examples.sh | grep '^Summary'"
+run ex_03_compile_warnings.txt \
+    "for f in src/examples/*/vulnerable.c; do gcc -std=c11 -Wall -Wextra -O2 \"\$f\" -o /dev/null; done 2>&1 | grep -E 'warning'"
+run ex_04_banned_scan.txt \
+    "python3 analysis/banned_functions.py src/examples/*/vulnerable.c" \
+    "python3 analysis/banned_functions.py src/examples/*/secure.c"
+run ex_05_demos.txt \
+    "./bin/examples/e13_command_injection/vulnerable 'dave; echo INJECTED'" \
+    "./bin/examples/e13_command_injection/secure 'dave; echo INJECTED'" \
+    "./bin/examples/e14_path_traversal/vulnerable ../secret.txt" \
+    "./bin/examples/e14_path_traversal/secure ../secret.txt" \
+    "./bin/examples/e20_strtok_reentrancy/vulnerable a=1,b=2,c=3" \
+    "./bin/examples/e20_strtok_reentrancy/secure a=1,b=2,c=3" \
+    "./bin/examples/e18_heap_overflow_malloc/vulnerable hello" \
+    "./bin/examples/e18_heap_overflow_malloc/vulnerable_asan hello 2>&1 | grep -E 'ERROR|WRITE of|#1 |is located|SUMMARY'" \
+    "./bin/examples/e16_double_free/vulnerable \$(printf 'K%.0s' {1..32})" \
+    "./bin/examples/e15_use_after_free/vulnerable_asan erin logout 2>&1 | grep -E 'ERROR|READ of|#[0-9] .*main|SUMMARY' | head -n 6"
+
 # ---------------------------------------------------------------- whole project
 run 90_make_test_summary.txt "make test 2>&1 | tail -n 11"
 run 91_analysis.txt "bash analysis/run_analysis.sh"
@@ -151,5 +172,8 @@ run 93_cppcheck_secure.txt \
 
 # Strip the absolute repository path from any output, keep it relative.
 sed -i "s#$(pwd)/##g" "$OUT"/*.txt
+
+# Valgrind can still leave vgcore.<pid> files for the expected crashes.
+rm -f vgcore.*
 
 echo "Saved $(ls "$OUT"/*.txt | wc -l) output files in $OUT/"

@@ -1,0 +1,4 @@
+$ EX_NEGATIVE_CONTROL=1 bash tests/scenarios/examples.sh | grep '^Summary'
+Summary [examples]: 34/90 passed, 56 failed
+[exit code: 0]
+

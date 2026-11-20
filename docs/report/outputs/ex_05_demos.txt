@@ -1,0 +1,54 @@
+$ ./bin/examples/e13_command_injection/vulnerable 'dave; echo INJECTED'
+Hello, dave
+INJECTED
+[exit code: 0]
+
+$ ./bin/examples/e13_command_injection/secure 'dave; echo INJECTED'
+REJECTED: name must be 1-32 characters of [A-Za-z0-9._-]
+[exit code: 2]
+
+$ ./bin/examples/e14_path_traversal/vulnerable ../secret.txt
+SECRET-TEST-VALUE-1234 (this file must never be readable through the public folder)
+[exit code: 0]
+
+$ ./bin/examples/e14_path_traversal/secure ../secret.txt
+REJECTED: file name must be 1-64 characters of [A-Za-z0-9._-] and must not start with '.'
+[exit code: 2]
+
+$ ./bin/examples/e20_strtok_reentrancy/vulnerable a=1,b=2,c=3
+a = 1
+[exit code: 0]
+
+$ ./bin/examples/e20_strtok_reentrancy/secure a=1,b=2,c=3
+a = 1
+b = 2
+c = 3
+[exit code: 0]
+
+$ ./bin/examples/e18_heap_overflow_malloc/vulnerable hello
+HELLO
+[exit code: 0]
+
+$ ./bin/examples/e18_heap_overflow_malloc/vulnerable_asan hello 2>&1 | grep -E 'ERROR|WRITE of|#1 |is located|SUMMARY'
+==75617==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x502000000015 at pc 0x7a5292eb1923 bp 0x7ffd7bead570 sp 0x7ffd7beacd18
+WRITE of size 6 at 0x502000000015 thread T0
+    #1 0x60f66d14e4b6 in main src/examples/e18_heap_overflow_malloc/vulnerable.c:33
+0x502000000015 is located 0 bytes after 5-byte region [0x502000000010,0x502000000015)
+    #1 0x60f66d14e47f in main src/examples/e18_heap_overflow_malloc/vulnerable.c:29
+SUMMARY: AddressSanitizer: heap-buffer-overflow ../../../../src/libsanitizer/asan/asan_interceptors.cpp:563 in strcpy
+[exit code: 0]
+
+$ ./bin/examples/e16_double_free/vulnerable $(printf 'K%.0s' {1..32})
+error: name is too long
+free(): double free detected in tcache 2
+[exit code: 134]
+
+$ ./bin/examples/e15_use_after_free/vulnerable_asan erin logout 2>&1 | grep -E 'ERROR|READ of|#[0-9] .*main|SUMMARY' | head -n 6
+==75640==ERROR: AddressSanitizer: heap-use-after-free on address 0x502000000010 at pc 0x7aeb6590ea6a bp 0x7ffe3ef23cb0 sp 0x7ffe3ef23428
+READ of size 2 at 0x502000000010 thread T0
+    #3 0x5cced659b4e5 in main src/examples/e15_use_after_free/vulnerable.c:36
+    #4 0x7aeb6506e1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #5 0x7aeb6506e28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #1 0x5cced659b4d1 in main src/examples/e15_use_after_free/vulnerable.c:34
+[exit code: 0]
+

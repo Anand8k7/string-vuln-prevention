@@ -37,8 +37,9 @@ B.E. 5th Semester
 6. [Vulnerability detection and analysis (Module 4)](#6-vulnerability-detection-and-analysis-module-4)
 7. [Testing and evaluation (Module 5)](#7-testing-and-evaluation-module-5)
 8. [Continuous integration](#8-continuous-integration)
-9. [Conclusion and future work](#9-conclusion-and-future-work)
-10. [References](#10-references)
+9. [Twenty additional string-vulnerability examples](#9-twenty-additional-string-vulnerability-examples)
+10. [Conclusion and future work](#10-conclusion-and-future-work)
+11. [References](#11-references)
 - [Appendix A — Reproducing every result](#appendix-a--reproducing-every-result)
 - [Appendix B — List of figures (screenshots)](#appendix-b--list-of-figures-screenshots)
 
@@ -60,7 +61,11 @@ corrupt adjacent stack buffers, overwrite the saved return address
 (Valgrind: *Jump to the invalid address 0x4141414141414141*), print stack
 memory and leak a simulated secret through `%p`/`%27$lx`, and crash on
 `%s%s%s…`. The secure versions reject every one of those inputs and pass all
-**123/123** automated tests under AddressSanitizer. Static and dynamic analysis
+**213/213** automated tests under AddressSanitizer (123 for the library, Q1
+and Q2, plus 90 for twenty additional small examples covering `gets`,
+off-by-one loops, `strncpy` termination, integer overflow in length
+calculations, command injection, path traversal, use-after-free, double free
+and more). Static and dynamic analysis
 (gcc warnings, Cppcheck, a banned-API scanner, AddressSanitizer and Valgrind)
 reports **0 findings in the secure code** against 5 compiler warnings, 3
 Cppcheck findings, 16 banned-API calls, 4 ASan stack-buffer-overflows and
@@ -149,8 +154,10 @@ string-vuln-prevention/
 ├── src/vulnerable/     q1_overflow.c, q2_format.c      (deliberately unsafe)
 ├── src/secure/         q1_overflow.c, q2_format.c      (fixed versions)
 ├── src/lib/            safe_string.h/.c, input_handler.h/.c
+├── src/examples/       20 small examples: eNN_name/{vulnerable.c,secure.c}
 ├── tests/              unit tests, test_framework.h, run_tests.sh
-│   └── scenarios/      q1_overflow.sh, q2_format.sh, lib_scenario.sh
+│   ├── scenarios/      q1_overflow.sh, q2_format.sh, examples.sh, lib_scenario.sh
+│   └── fixtures/       test files for the path-traversal example
 ├── analysis/           run_analysis.sh, banned_functions.py, logs/
 ├── docs/report/        report.md, collect_outputs.sh, render_report.py, outputs/
 ├── screenshots/        terminal captures (see Appendix B)
@@ -173,6 +180,7 @@ The same source is built three ways (`Makefile`):
 | asan | `bin/asan/` | `-O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -D_FORTIFY_SOURCE=0` | run-time detection; FORTIFY disabled because Ubuntu's gcc enables it by default at `-O1` and it aborted before ASan could report |
 
 Make targets: `make all`, `make vulnerable`, `make secure`, `make asan`,
+`make examples`,
 `make test`, `make analyze`, `make clean`, `make help`.
 
 **Figure 3 — make targets**
@@ -1646,16 +1654,16 @@ the source line and the size of the write:
 ```text
 $ ./bin/asan/vulnerable_q1_overflow abcdefghijklmno abcdefghijklmno
 =================================================================
-==62510==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x74daa6b000c0 at pc 0x74daa96b9260 bp 0x7ffd70f11ed0 sp 0x7ffd70f11678
-WRITE of size 16 at 0x74daa6b000c0 thread T0
-    #0 0x74daa96b925f in strcat ../../../../src/libsanitizer/asan/asan_interceptors.cpp:515
-    #1 0x6405a8bcf69a in main src/vulnerable/q1_overflow.c:67
-    #2 0x74daa8dc41c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
-    #3 0x74daa8dc428a in __libc_start_main_impl ../csu/libc-start.c:360
-    #4 0x6405a8bcf284 in _start (bin/asan/vulnerable_q1_overflow+0x2284) (BuildId: 4ef7c6f699d2e443af6627ffb340ab9ec02e3f61)
+==65208==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x741943d000c0 at pc 0x7419469cd260 bp 0x7ffe0541e530 sp 0x7ffe0541dcd8
+WRITE of size 16 at 0x741943d000c0 thread T0
+    #0 0x7419469cd25f in strcat ../../../../src/libsanitizer/asan/asan_interceptors.cpp:515
+    #1 0x5831ff43269a in main src/vulnerable/q1_overflow.c:67
+    #2 0x7419460d81c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #3 0x7419460d828a in __libc_start_main_impl ../csu/libc-start.c:360
+    #4 0x5831ff432284 in _start (bin/asan/vulnerable_q1_overflow+0x2284) (BuildId: 4ef7c6f699d2e443af6627ffb340ab9ec02e3f61)
 
-Address 0x74daa6b000c0 is located in stack of thread T0 at offset 192 in frame
-    #0 0x6405a8bcf358 in main src/vulnerable/q1_overflow.c:42
+Address 0x741943d000c0 is located in stack of thread T0 at offset 192 in frame
+    #0 0x5831ff432358 in main src/vulnerable/q1_overflow.c:42
 
   This frame has 3 object(s):
     [32, 64) 'acct' (line 43)
@@ -1705,24 +1713,24 @@ return address:
 
 ```text
 $ valgrind -q ./bin/vulnerable/q1_overflow $(printf 'A%.0s' {1..100}) cse 2>&1 | head -n 18
-==62516== Source and destination overlap in strcat(0x1ffeffec50, 0x1ffeffec70)
-==62516==    at 0x484EFE3: strcat (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
-==62516==    by 0x109288: main (q1_overflow.c:60)
-==62516== 
-==62516== Source and destination overlap in strcat(0x1ffeffec30, 0x1ffeffec70)
-==62516==    at 0x484EFE3: strcat (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
-==62516==    by 0x1092FC: main (q1_overflow.c:67)
-==62516== 
-==62516== Jump to the invalid address stated on the next line
-==62516==    at 0x4141414141414141: ???
-==62516==    by 0x4141414141414140: ???
-==62516==    by 0x4141414141414140: ???
-==62516==    by 0x4141414141414140: ???
-==62516==    by 0x4100214141414140: ???
-==62516==    by 0x4141414141414140: ???
-==62516==    by 0x4141414141414140: ???
-==62516==    by 0x41414140: ???
-==62516==  Address 0x4141414141414141 is not stack'd, malloc'd or (recently) free'd
+==65214== Source and destination overlap in strcat(0x1ffeffec50, 0x1ffeffec70)
+==65214==    at 0x484EFE3: strcat (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==65214==    by 0x109288: main (q1_overflow.c:60)
+==65214== 
+==65214== Source and destination overlap in strcat(0x1ffeffec30, 0x1ffeffec70)
+==65214==    at 0x484EFE3: strcat (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==65214==    by 0x1092FC: main (q1_overflow.c:67)
+==65214== 
+==65214== Jump to the invalid address stated on the next line
+==65214==    at 0x4141414141414141: ???
+==65214==    by 0x4141414141414140: ???
+==65214==    by 0x4141414141414140: ???
+==65214==    by 0x4141414141414140: ???
+==65214==    by 0x4100214141414140: ???
+==65214==    by 0x4141414141414140: ???
+==65214==    by 0x4141414141414140: ???
+==65214==    by 0x41414140: ???
+==65214==  Address 0x4141414141414141 is not stack'd, malloc'd or (recently) free'd
 [exit code: 0]
 ```
 <!-- END OUTPUT -->
@@ -2184,7 +2192,7 @@ Saved record: name=alice age=21 msg=hello
 
 $ printf 'alice\n21\n%%p.%%p.%%p.%%p\n' | ./bin/vulnerable/q2_format
 Name: Age: Message: 
-Your message: 0x7a22fc9ab5c0.(nil).(nil).0xa
+Your message: 0x768e48b3d5c0.(nil).(nil).0xa
 Saved record: name=alice age=21 msg=%p.%p.%p.%p
 [exit code: 0]
 
@@ -2196,13 +2204,13 @@ Saved record: name=alice age=21 msg=%27$lx
 
 $ printf 'alice\n21\n50%%off\n' | ./bin/vulnerable/q2_format
 Name: Age: Message: 
-Your message: 5037257642700ff
+Your message: 5036762552700ff
 Saved record: name=alice age=21 msg=50%off
 [exit code: 0]
 
 $ printf 'alice\n21\n%%s%%s%%s%%s%%s%%s%%s%%s\n' | ./bin/vulnerable/q2_format
-bash: line 1: 64033 Done                    printf 'alice\n21\n%%s%%s%%s%%s%%s%%s%%s%%s\n'
-     64034 Segmentation fault      (core dumped) | ./bin/vulnerable/q2_format
+bash: line 1: 66830 Done                    printf 'alice\n21\n%%s%%s%%s%%s%%s%%s%%s%%s\n'
+     66831 Segmentation fault      (core dumped) | ./bin/vulnerable/q2_format
 [exit code: 139]
 ```
 <!-- END OUTPUT -->
@@ -2254,8 +2262,8 @@ Saved record: name=alice age=-1 msg=hello
 [exit code: 0]
 
 $ printf 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n21\nhello\n' | ./bin/vulnerable/q2_format
-bash: line 1: 64057 Done                    printf 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n21\nhello\n'
-     64058 Segmentation fault      (core dumped) | ./bin/vulnerable/q2_format
+bash: line 1: 66850 Done                    printf 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n21\nhello\n'
+     66851 Segmentation fault      (core dumped) | ./bin/vulnerable/q2_format
 [exit code: 139]
 ```
 <!-- END OUTPUT -->
@@ -2507,17 +2515,17 @@ In function ‘sprintf’,
 ```text
 $ printf 'alice\n21\n%s\n' $(printf 'B%.0s' {1..60}) | ./bin/asan/vulnerable_q2_format 2>&1 | head -n 25
 =================================================================
-==64062==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x741812e00120 at pc 0x741815a15d69 bp 0x7ffce2007a40 sp 0x7ffce20071d0
-WRITE of size 83 at 0x741812e00120 thread T0
-    #0 0x741815a15d68 in vsprintf ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1671
-    #1 0x741815a1751b in sprintf ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1714
-    #2 0x5910ee402442 in main src/vulnerable/q2_format.c:62
-    #3 0x7418151481c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
-    #4 0x74181514828a in __libc_start_main_impl ../csu/libc-start.c:360
-    #5 0x5910ee4021c4 in _start (bin/asan/vulnerable_q2_format+0x11c4) (BuildId: ec62d8f88313ead17a7f1efb2176e68eeab1df74)
+==66855==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x7af46f800120 at pc 0x7af4722d8d69 bp 0x7ffe14de9ee0 sp 0x7ffe14de9670
+WRITE of size 83 at 0x7af46f800120 thread T0
+    #0 0x7af4722d8d68 in vsprintf ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1671
+    #1 0x7af4722da51b in sprintf ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1714
+    #2 0x6158796e8442 in main src/vulnerable/q2_format.c:62
+    #3 0x7af471a0b1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #4 0x7af471a0b28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #5 0x6158796e81c4 in _start (bin/asan/vulnerable_q2_format+0x11c4) (BuildId: ec62d8f88313ead17a7f1efb2176e68eeab1df74)
 
-Address 0x741812e00120 is located in stack of thread T0 at offset 288 in frame
-    #0 0x5910ee402298 in main src/vulnerable/q2_format.c:38
+Address 0x7af46f800120 is located in stack of thread T0 at offset 288 in frame
+    #0 0x6158796e8298 in main src/vulnerable/q2_format.c:38
 
   This frame has 5 object(s):
     [48, 52) 'age' (line 44)
@@ -2596,7 +2604,7 @@ The banned-API scanner was added because Cppcheck reported **none** of the
 
 ```text
 $ bash analysis/run_analysis.sh
-Analysis run: 2026-11-20 15:30:07 UTC
+Analysis run: 2026-11-20 18:00:51 UTC
 Host:         Linux 6.8.0-1070-azure
 gcc:          gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
 cppcheck:     Cppcheck 2.13.0
@@ -2774,22 +2782,24 @@ bugs, and the tools plus the tests confirm it.
   input_from_arg, input_read_file)
 * `tests/scenarios/q1_overflow.sh` — 17 cases × 4 builds
 * `tests/scenarios/q2_format.sh` — 26 cases × 4 builds
+* `tests/scenarios/examples.sh` — 90 cases × 4 builds for the 20 additional
+  examples (Section 9)
 
 <!-- BEGIN OUTPUT 90_make_test_summary.txt -->
 *Real output — `docs/report/outputs/90_make_test_summary.txt`*
 
 ```text
 $ make test 2>&1 | tail -n 11
-
 =================== OVERALL TEST SUMMARY ===================
 Suite                          Passed    Total   Result
 ----------------------------   ------    -----   ------
 input_handler                      25       25     PASS
 safe_string                        55       55     PASS
+examples                           90       90     PASS
 q1_overflow                        17       17     PASS
 q2_format                          26       26     PASS
 ----------------------------   ------    -----   ------
-TOTAL                             123      123     PASS
+TOTAL                             213      213     PASS
 ============================================================
 [exit code: 0]
 ```
@@ -2825,7 +2835,7 @@ Testing quality checks:
 
 1. install `build-essential`, `cppcheck`, `valgrind`
 2. `make all asan` (secure code must compile with `-Werror`)
-3. `make test` (all 123 tests)
+3. `make test` (all 213 tests)
 4. Cppcheck on `src/secure src/lib tests` with `--error-exitcode=1`
 5. Cppcheck on `src/vulnerable` (informational only)
 6. banned-API scan on `src/secure src/lib` (must be clean)
@@ -2842,9 +2852,347 @@ Any unsafe change to the secure code — for example re-introducing `strcpy` or
 
 ---
 
-## 9. Conclusion and future work
+## 9. Twenty additional string-vulnerability examples
 
-### 9.1 Conclusion
+Q1 and Q2 study two vulnerability families in depth. To cover the wider range
+of string-related bugs seen in real C code, `src/examples/` contains **20
+small, self-contained examples**, each as a pair:
+
+```
+src/examples/eNN_name/vulnerable.c   the bug, marked "BUG:" in the comments
+src/examples/eNN_name/secure.c       the fix, marked "FIX:" in the comments
+```
+
+Each pair is built four times by `make examples` (also part of `make all`):
+`vulnerable`, `secure`, `vulnerable_asan`, `secure_asan` in
+`bin/examples/eNN_name/`. The vulnerable versions use the same
+protections-off flags as `src/vulnerable/`, the secure versions the same
+`-Werror` + hardening flags as `src/secure/` and link the safe-string
+library. Examples 1–4 repeat the Q1/Q2 bug classes in their smallest form so
+that all twenty can be compared side by side.
+
+Safety: all inputs are local. The command-injection example only ever injects
+`echo INJECTED`, and the path-traversal example reads a test fixture
+(`tests/fixtures/examples/secret.txt`).
+
+### 9.1 Summary table
+
+"Vulnerable — observed" and "Secure — observed" are taken from the automated
+test run in Section 9.3 (and the demonstrations in Section 9.4).
+
+| # | Example | Vulnerability | CWE | Bug (`vulnerable.c`) | Fix (`secure.c`) | Vulnerable — observed | Secure — observed |
+|---|---------|---------------|-----|----------------------|------------------|-----------------------|-------------------|
+| 1 | `e01_strcpy_overflow` | `strcpy` overflow | 120, 121 | `strcpy(name, argv[1])` into `name[16]` | `safe_copy`, reject on `SS_TRUNCATED` | 16 chars: silent, ASan stack-buffer-overflow; 200 chars: SIGSEGV | rejects ≥ 16 chars |
+| 2 | `e02_strcat_overflow` | `strcat` overflow | 120, 121 | `strcat` into `msg[24]` | `safe_concat` on total size, every status checked | 16 chars: ASan stack-buffer-overflow; 200 chars: SIGSEGV | rejects when greeting > 23 chars |
+| 3 | `e03_format_string` | format string | 134 | `printf(argv[1])` | `printf("%s\n", argv[1])` | `50% off` misprinted, `%p` prints stack values, `%s`×8 SIGSEGV; **ASan: not detected** | prints `%p…` literally |
+| 4 | `e04_scanf_no_width` | `scanf("%s")` without width | 120, 242 | `scanf("%s", word)` into `word[8]` | `scanf("%7s")` + check next character | 8 chars: ASan stack-buffer-overflow; 300 chars: SIGSEGV | rejects ≥ 8 chars |
+| 5 | `e05_gets` | `gets()` | 242, 120 | `gets(line)` (declared by hand; removed in C11) | `input_read_line` (bounded `fgets`) | linker: *"the `gets' function is dangerous"*; 16 chars: ASan stack-buffer-overflow; 500 chars: SIGSEGV | rejects ≥ 16 chars, rejects EOF |
+| 6 | `e06_off_by_one_loop` | off-by-one in a loop | 193, 787 | `if (len > sizeof out)` and `for (i = 0; i <= len; i++)` | `len >= sizeof out`, `i < len`, explicit `out[len] = '\0'` | 8 chars pass the check: ASan stack-buffer-overflow (plain build shows nothing) | rejects ≥ 8 chars |
+| 7 | `e07_strncpy_no_terminator` | missing `'\0'` after `strncpy` | 170, 126 | `strncpy(name, s, sizeof name)` | `safe_copy` (always terminates) | gcc `-Wstringop-truncation`; 8+ chars: ASan stack-buffer-overflow (read) | rejects ≥ 8 chars |
+| 8 | `e08_sprintf_overflow` | `sprintf` → `snprintf` | 120, 787 | `sprintf(line, "user=%s id=%d", …)` | `snprintf` + check `n < 0 \|\| n >= sizeof line` | 21 chars: ASan stack-buffer-overflow; 100 chars: SIGSEGV | rejects when line > 31 chars |
+| 9 | `e09_length_integer_overflow` | integer overflow in a length calculation | 190, 122, 131 | `unsigned char total = la + lb + 1` (301 → 45, 256 → 0) | `size_t`, wrap check, limit ≤ 255 before narrowing | SIGABRT (heap corruption); ASan heap-buffer-overflow | rejects records > 255 bytes |
+| 10 | `e10_out_of_bounds_index` | out-of-bounds index | 129, 125 | `months[atoi(s) - 1]` | `validate_integer(s, 1, 12)` | 0 / 13 / `abc`: ASan global-buffer-overflow; 100000: SIGSEGV (UBSan runtime error) | rejects outside 1–12 |
+| 11 | `e11_unterminated_strlen` | `strlen` on an unterminated field | 170, 126 | `strlen(field)` / `%s` on a full 8-byte field | `safe_strlen(field, n)` + `printf("%.*s")` | 8-byte field: over-read (plain), ASan stack-buffer-overflow | accepts, prints exactly 8 chars |
+| 12 | `e12_memcpy_wrong_size` | `memcpy` with the wrong size | 805, 787 | `memcpy(dst, src, sizeof src)` (64 into 16) | size from the data (`strlen + 1`), checked against `sizeof dst` | gcc out-of-bounds warning; ASan error on **every** input, even `hi` (reported as memcpy-param-overlap) | rejects ≥ 16 chars |
+| 13 | `e13_command_injection` | command injection via `system()` | 78 | `system("echo Hello, " + name)` | no shell; whitelist `[A-Za-z0-9._-]` | `; echo INJECTED`, `&& …`, `$(…)` all executed; **ASan: not detected** | rejects shell metacharacters |
+| 14 | `e14_path_traversal` | path traversal | 22 | `BASE_DIR + name`, no checks | whitelist, no leading `.`, `realpath()` must stay inside the folder | `../secret.txt` printed the secret file; **ASan: not detected** | rejects `../…`, missing files |
+| 15 | `e15_use_after_free` | use-after-free | 416 | `free(user)` on logout, then `printf(… user)` | use first, free once, set to `NULL` | logout prints freed memory; ASan heap-use-after-free | correct output |
+| 16 | `e16_double_free` | double free | 415 | `free()` in the error path **and** at the end | single clean-up point (`goto out`) | glibc: *"free(): double free detected in tcache 2"* (SIGABRT); ASan double-free | rejects, frees once |
+| 17 | `e17_unchecked_malloc` | unchecked `malloc` result | 252, 690, 789 | `strtoul` unchecked, `malloc(n)` not checked | `validate_integer` 32 B – 1 MiB, `NULL` check | `-1`, 10^15: SIGSEGV (write through `NULL`), ASan allocation-size-too-big; `abc`, 31 silently accepted | rejects outside range |
+| 18 | `e18_heap_overflow_malloc` | heap overflow (`malloc` without `+1`) | 122, 131, 193 | `malloc(strlen(s))` then `strcpy` | `malloc(len + 1)`, length limit, `safe_copy` | plain output looks **correct** (`HELLO`); ASan heap-buffer-overflow on **every** input | correct output |
+| 19 | `e19_signed_unsigned_length` | signed/unsigned length mismatch | 195, 839 | `int n` checked only from above, `memcpy(buf, s, n)` | `validate_integer(n, 0, 31)` + `n ≤ strlen` | `n = -1`: SIGSEGV, ASan negative-size-param; `n > strlen` accepted | rejects both |
+| 20 | `e20_strtok_reentrancy` | `strtok` vs `strtok_r` | 663 | nested `strtok` calls share one hidden state | `strtok_r` with separate save pointers, `key=value` validation | `a=1,b=2,c=3` prints only `a = 1` (pairs silently lost); **ASan: not detected** | prints all 3 pairs |
+
+### 9.2 Results in numbers
+
+| Category | Cases | Vulnerable: defect observed (plain or ASan build) | Reported by ASan/UBSan | Secure: PASS |
+|----------|:-:|:-:|:-:|:-:|
+| Normal | 22 | 5 | 3 | 22 / 22 |
+| Boundary | 31 | 16 | 15 | 31 / 31 |
+| Invalid | 19 | 16 | 4 | 19 / 19 |
+| Oversized | 18 | 15 | 13 | 18 / 18 |
+| **Total** | **90** | **52** | **35** | **90 / 90** |
+
+* ASan/UBSan reported an error for 16 of the 20 examples. It reported
+  **nothing** for format strings (E03), command injection (E13), path
+  traversal (E14) and `strtok` (E20): these are logic and input-handling
+  bugs, not memory errors, so only validation, review and tests find them.
+* Five **Normal** cases already show a defect: E03 (`50% off`), E12
+  (`memcpy` with the wrong size), E15 (an ordinary logout), E18 (`malloc`
+  without `+1`) and E20 (the first ordinary `key=value` list). E12 and E18
+  corrupt memory on every call; in E18 the output even looks correct — only
+  ASan reveals the bug.
+* The compiler warned about only 4 of the 20 vulnerable examples (Section
+  9.5), and the banned-API scanner flags 12 of them (15 findings).
+
+### 9.3 Test run
+
+`tests/scenarios/examples.sh` runs every case on the four builds, in the same
+way as the Q1/Q2 scenario tests (a case passes when the secure build gives
+the expected result, its output matches the expected text for accepted input,
+and the secure ASan build reports no error).
+
+<!-- BEGIN OUTPUT ex_01_tests.txt -->
+*Real output — `docs/report/outputs/ex_01_tests.txt`*
+
+```text
+$ bash tests/scenarios/examples.sh | grep -v '^TF_RESULT'
+
+=== Scenario suite: examples (vulnerable vs secure) ===
++-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
+| ID    | Category  | Input                        | Vulnerable (plain)       | Vulnerable (ASan build)        | Expect | Secure result                | S+ASn | Result |
++-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
+| E01-1 | Normal    | alice                        | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E01-2 | Boundary  | 15 chars (max)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E01-3 | Boundary  | 16 chars (max+1)             | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
+| E01-4 | Oversized | 200 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
+| E02-1 | Normal    | bob                          | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E02-2 | Boundary  | 15 chars (fits 24)           | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E02-3 | Boundary  | 16 chars (1 over)            | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
+| E02-4 | Oversized | 200 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
+| E03-1 | Normal    | hello world                  | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E03-2 | Normal    | 50% off                      | format interpreted       | NOT DETECTED: format interpret | ACCEPT | ACCEPT                       | clean | PASS   |
+| E03-3 | Invalid   | %p.%p.%p.%p                  | stack values printed     | NOT DETECTED: stack values pri | ACCEPT | ACCEPT                       | clean | PASS   |
+| E03-4 | Invalid   | %s x 8                       | CRASH (SIGSEGV)          | NOT DETECTED: format interpret | ACCEPT | ACCEPT                       | clean | PASS   |
+| E04-1 | Normal    | word "cat"                   | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E04-2 | Boundary  | 7 chars (max)                | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E04-3 | Boundary  | 8 chars (max+1)              | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: word too long        | clean | PASS   |
+| E04-4 | Oversized | 300 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: word too long        | clean | PASS   |
+| E05-1 | Normal    | line "hello there"           | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E05-2 | Boundary  | 15 chars (max)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E05-3 | Boundary  | 16 chars (max+1)             | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: line too long        | clean | PASS   |
+| E05-4 | Invalid   | empty input (EOF)            | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: line missing         | clean | PASS   |
+| E05-5 | Oversized | 500 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: line too long        | clean | PASS   |
+| E06-1 | Normal    | abc                          | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E06-2 | Boundary  | 7 chars (max)                | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E06-3 | Boundary  | 8 chars (check passes)       | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: word too long        | clean | PASS   |
+| E06-4 | Oversized | 9 chars                      | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: word too long        | clean | PASS   |
+| E07-1 | Normal    | tom                          | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E07-2 | Boundary  | 7 chars (max)                | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E07-3 | Boundary  | 8 chars (no '\0')            | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
+| E07-4 | Oversized | 40 chars                     | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
+| E08-1 | Normal    | carol                        | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E08-2 | Boundary  | 20 chars (line 31)           | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E08-3 | Boundary  | 21 chars (line 32)           | bad input accepted       | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
+| E08-4 | Oversized | 100 chars                    | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
+| E09-1 | Normal    | abc + def                    | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E09-2 | Boundary  | 200 + 54 (255 bytes)         | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E09-3 | Boundary  | 200 + 55 (256 -> 0)          | CRASH (SIGABRT)          | ASan: heap-buffer-overflow     | REJECT | REJECT: record too long      | clean | PASS   |
+| E09-4 | Oversized | 200 + 100 (301 -> 45)        | CRASH (SIGABRT)          | ASan: heap-buffer-overflow     | REJECT | REJECT: record too long      | clean | PASS   |
+| E10-1 | Normal    | month 3                      | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E10-2 | Boundary  | month 12                     | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E10-3 | Boundary  | month 13                     | bad input accepted       | ASan: global-buffer-overflow   | REJECT | REJECT: month must be a whol | clean | PASS   |
+| E10-4 | Boundary  | month 0                      | bad input accepted       | ASan: global-buffer-overflow   | REJECT | REJECT: month must be a whol | clean | PASS   |
+| E10-5 | Invalid   | "abc"                        | bad input accepted       | ASan: global-buffer-overflow   | REJECT | REJECT: month must be a whol | clean | PASS   |
+| E10-6 | Oversized | month 100000                 | CRASH (SIGSEGV)          | UBSan: runtime error           | REJECT | REJECT: month must be a whol | clean | PASS   |
+| E11-1 | Normal    | field "bob" (padded)         | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E11-2 | Boundary  | 7 chars                      | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E11-3 | Boundary  | 8 chars (no '\0')            | over-read past field     | ASan: stack-buffer-overflow    | ACCEPT | ACCEPT                       | clean | PASS   |
+| E11-4 | Invalid   | empty record                 | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: name field missing   | clean | PASS   |
+| E12-1 | Normal    | hi                           | OK (no visible effect)   | ASan: memcpy-param-overlap     | ACCEPT | ACCEPT                       | clean | PASS   |
+| E12-2 | Boundary  | 15 chars (max)               | OK (no visible effect)   | ASan: memcpy-param-overlap     | ACCEPT | ACCEPT                       | clean | PASS   |
+| E12-3 | Boundary  | 16 chars (max+1)             | bad input accepted       | ASan: memcpy-param-overlap     | REJECT | REJECT: text too long        | clean | PASS   |
+| E12-4 | Oversized | 100 chars                    | bad input accepted       | ASan: memcpy-param-overlap     | REJECT | REJECT: text too long        | clean | PASS   |
+| E13-1 | Normal    | dave                         | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E13-2 | Invalid   | dave; echo INJECTED          | command injected         | NOT DETECTED: command injected | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
+| E13-3 | Invalid   | dave && echo INJECTED        | command injected         | NOT DETECTED: command injected | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
+| E13-4 | Invalid   | $(echo INJECTED)             | command injected         | NOT DETECTED: command injected | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
+| E13-5 | Oversized | 200 chars                    | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
+| E14-1 | Normal    | welcome.txt                  | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E14-2 | Invalid   | ../secret.txt                | secret file read         | NOT DETECTED: secret file read | REJECT | REJECT: file name must be 1- | clean | PASS   |
+| E14-3 | Invalid   | ../../examples/secret        | secret file read         | NOT DETECTED: secret file read | REJECT | REJECT: file name must be 1- | clean | PASS   |
+| E14-4 | Invalid   | missing.txt                  | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: file not found       | clean | PASS   |
+| E14-5 | Oversized | 300-char name                | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: file name must be 1- | clean | PASS   |
+| E15-1 | Normal    | erin stay                    | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E15-2 | Normal    | erin logout                  | freed memory printed     | ASan: heap-use-after-free      | ACCEPT | ACCEPT                       | clean | PASS   |
+| E15-3 | Invalid   | erin reboot                  | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: command must be 'sta | clean | PASS   |
+| E15-4 | Oversized | 100-char name logout         | bad input accepted       | ASan: heap-use-after-free      | REJECT | REJECT: name must be 1-32 ch | clean | PASS   |
+| E16-1 | Normal    | frank                        | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E16-2 | Boundary  | 31 chars (max)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E16-3 | Boundary  | 32 chars (error path)        | CRASH (SIGABRT)          | ASan: double-free              | REJECT | REJECT: name too long        | clean | PASS   |
+| E16-4 | Oversized | 1000 chars                   | CRASH (SIGABRT)          | ASan: double-free              | REJECT | REJECT: name too long        | clean | PASS   |
+| E17-1 | Normal    | 64 bytes                     | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E17-2 | Boundary  | 32 bytes (min)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E17-3 | Boundary  | 31 bytes (min-1)             | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: size must be a whole | clean | PASS   |
+| E17-4 | Invalid   | "abc"                        | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: size must be a whole | clean | PASS   |
+| E17-5 | Invalid   | -1                           | CRASH (SIGSEGV)          | ASan: allocation-size-too-big  | REJECT | REJECT: size must be a whole | clean | PASS   |
+| E17-6 | Oversized | 10^15 bytes                  | CRASH (SIGSEGV)          | ASan: allocation-size-too-big  | REJECT | REJECT: size must be a whole | clean | PASS   |
+| E18-1 | Normal    | hello                        | OK (no visible effect)   | ASan: heap-buffer-overflow     | ACCEPT | ACCEPT                       | clean | PASS   |
+| E18-2 | Boundary  | 1 char                       | OK (no visible effect)   | ASan: heap-buffer-overflow     | ACCEPT | ACCEPT                       | clean | PASS   |
+| E18-3 | Invalid   | empty string                 | bad input accepted       | UBSan: runtime error           | REJECT | REJECT: text must be 1-4096  | clean | PASS   |
+| E18-4 | Oversized | 5000 chars                   | bad input accepted       | ASan: heap-buffer-overflow     | REJECT | REJECT: text must be 1-4096  | clean | PASS   |
+| E19-1 | Normal    | hello, n=3                   | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E19-2 | Boundary  | n=0                          | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E19-3 | Boundary  | n=31 (max)                   | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E19-4 | Invalid   | n=-1                         | CRASH (SIGSEGV)          | ASan: negative-size-param      | REJECT | REJECT: n must be a whole nu | clean | PASS   |
+| E19-5 | Invalid   | n=10 > text length           | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: n is larger than the | clean | PASS   |
+| E19-6 | Oversized | n=99999999999                | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: n must be a whole nu | clean | PASS   |
+| E20-1 | Normal    | a=1,b=2,c=3                  | pairs lost               | NOT DETECTED: pairs lost       | ACCEPT | ACCEPT                       | clean | PASS   |
+| E20-2 | Boundary  | a=1 (one pair)               | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| E20-3 | Invalid   | a=1,b (no value)             | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: every item must look | clean | PASS   |
+| E20-4 | Invalid   | a=1;rm (bad char)            | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: input must be 1-127  | clean | PASS   |
+| E20-5 | Oversized | 200 chars                    | bad input accepted       | NOT DETECTED: bad input accept | REJECT | REJECT: input must be 1-127  | clean | PASS   |
++-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
+Summary [examples]: 90/90 passed, 0 failed
+Full program output for every run: analysis/logs/scenarios/examples/
+[exit code: 0]
+```
+<!-- END OUTPUT -->
+
+**Negative control** — the same suite with the vulnerable builds in place of
+the secure ones must fail:
+
+<!-- BEGIN OUTPUT ex_02_negative_control.txt -->
+*Real output — `docs/report/outputs/ex_02_negative_control.txt`*
+
+```text
+$ EX_NEGATIVE_CONTROL=1 bash tests/scenarios/examples.sh | grep '^Summary'
+Summary [examples]: 34/90 passed, 56 failed
+[exit code: 0]
+```
+<!-- END OUTPUT -->
+
+**Figure 26 — test table for the 20 examples**
+![Figure 26 – Examples test table](../../screenshots/26_examples_test_table.png)
+*Placeholder — capture with: `bash tests/scenarios/examples.sh` (zoom out; 90 rows — two captures are fine)*
+
+### 9.4 Selected demonstrations
+
+<!-- BEGIN OUTPUT ex_05_demos.txt -->
+*Real output — `docs/report/outputs/ex_05_demos.txt`*
+
+```text
+$ ./bin/examples/e13_command_injection/vulnerable 'dave; echo INJECTED'
+Hello, dave
+INJECTED
+[exit code: 0]
+
+$ ./bin/examples/e13_command_injection/secure 'dave; echo INJECTED'
+REJECTED: name must be 1-32 characters of [A-Za-z0-9._-]
+[exit code: 2]
+
+$ ./bin/examples/e14_path_traversal/vulnerable ../secret.txt
+SECRET-TEST-VALUE-1234 (this file must never be readable through the public folder)
+[exit code: 0]
+
+$ ./bin/examples/e14_path_traversal/secure ../secret.txt
+REJECTED: file name must be 1-64 characters of [A-Za-z0-9._-] and must not start with '.'
+[exit code: 2]
+
+$ ./bin/examples/e20_strtok_reentrancy/vulnerable a=1,b=2,c=3
+a = 1
+[exit code: 0]
+
+$ ./bin/examples/e20_strtok_reentrancy/secure a=1,b=2,c=3
+a = 1
+b = 2
+c = 3
+[exit code: 0]
+
+$ ./bin/examples/e18_heap_overflow_malloc/vulnerable hello
+HELLO
+[exit code: 0]
+
+$ ./bin/examples/e18_heap_overflow_malloc/vulnerable_asan hello 2>&1 | grep -E 'ERROR|WRITE of|#1 |is located|SUMMARY'
+==75617==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x502000000015 at pc 0x7a5292eb1923 bp 0x7ffd7bead570 sp 0x7ffd7beacd18
+WRITE of size 6 at 0x502000000015 thread T0
+    #1 0x60f66d14e4b6 in main src/examples/e18_heap_overflow_malloc/vulnerable.c:33
+0x502000000015 is located 0 bytes after 5-byte region [0x502000000010,0x502000000015)
+    #1 0x60f66d14e47f in main src/examples/e18_heap_overflow_malloc/vulnerable.c:29
+SUMMARY: AddressSanitizer: heap-buffer-overflow ../../../../src/libsanitizer/asan/asan_interceptors.cpp:563 in strcpy
+[exit code: 0]
+
+$ ./bin/examples/e16_double_free/vulnerable $(printf 'K%.0s' {1..32})
+error: name is too long
+free(): double free detected in tcache 2
+[exit code: 134]
+
+$ ./bin/examples/e15_use_after_free/vulnerable_asan erin logout 2>&1 | grep -E 'ERROR|READ of|#[0-9] .*main|SUMMARY' | head -n 6
+==75640==ERROR: AddressSanitizer: heap-use-after-free on address 0x502000000010 at pc 0x7aeb6590ea6a bp 0x7ffe3ef23cb0 sp 0x7ffe3ef23428
+READ of size 2 at 0x502000000010 thread T0
+    #3 0x5cced659b4e5 in main src/examples/e15_use_after_free/vulnerable.c:36
+    #4 0x7aeb6506e1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #5 0x7aeb6506e28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #1 0x5cced659b4d1 in main src/examples/e15_use_after_free/vulnerable.c:34
+[exit code: 0]
+```
+<!-- END OUTPUT -->
+
+**Figure 27 — command injection and path traversal, vulnerable vs secure**
+![Figure 27 – Examples demonstrations](../../screenshots/27_examples_demos.png)
+*Placeholder — capture with: `./bin/examples/e13_command_injection/vulnerable 'dave; echo INJECTED'; ./bin/examples/e13_command_injection/secure 'dave; echo INJECTED'; ./bin/examples/e14_path_traversal/vulnerable ../secret.txt; ./bin/examples/e14_path_traversal/secure ../secret.txt`*
+
+### 9.5 Static analysis of the examples
+
+Compiler warnings for the vulnerable examples (`-Wall -Wextra -O2`):
+
+<!-- BEGIN OUTPUT ex_03_compile_warnings.txt -->
+*Real output — `docs/report/outputs/ex_03_compile_warnings.txt`*
+
+```text
+$ for f in src/examples/*/vulnerable.c; do gcc -std=c11 -Wall -Wextra -O2 "$f" -o /dev/null; done 2>&1 | grep -E 'warning'
+src/examples/e03_format_string/vulnerable.c:21:5: warning: format not a string literal and no format arguments [-Wformat-security]
+vulnerable.c:(.text.startup+0x20): warning: the `gets' function is dangerous and should not be used.
+src/examples/e07_strncpy_no_terminator/vulnerable.c:24:5: warning: ‘__builtin_strncpy’ specified bound 8 equals destination size [-Wstringop-truncation]
+/usr/include/x86_64-linux-gnu/bits/string_fortified.h:29:10: warning: ‘__builtin___memcpy_chk’ forming offset [16, 63] is out of the bounds [0, 16] of object ‘dst’ with type ‘char[16]’ [-Warray-bounds=]
+[exit code: 0]
+```
+<!-- END OUTPUT -->
+
+Banned-API scan, vulnerable vs secure examples:
+
+<!-- BEGIN OUTPUT ex_04_banned_scan.txt -->
+*Real output — `docs/report/outputs/ex_04_banned_scan.txt`*
+
+```text
+$ python3 analysis/banned_functions.py src/examples/*/vulnerable.c
+src/examples/e01_strcpy_overflow/vulnerable.c:24: [BANNED-strcpy] strcpy() does not know the destination size (CWE-120)
+src/examples/e02_strcat_overflow/vulnerable.c:24: [BANNED-strcat] strcat() does not know the destination size (CWE-120)
+src/examples/e02_strcat_overflow/vulnerable.c:25: [BANNED-strcat] strcat() does not know the destination size (CWE-120)
+src/examples/e03_format_string/vulnerable.c:21: [FORMAT-nonliteral] format string is a variable, not a literal (CWE-134)
+src/examples/e04_scanf_no_width/vulnerable.c:18: [BANNED-scanf-%s] scanf("%s") without a field width (CWE-120)
+src/examples/e05_gets/vulnerable.c:16: [BANNED-gets] gets() cannot limit input length (CWE-242)
+src/examples/e05_gets/vulnerable.c:22: [BANNED-gets] gets() cannot limit input length (CWE-242)
+src/examples/e07_strncpy_no_terminator/vulnerable.c:24: [RISKY-strncpy] strncpy() may leave the result unterminated (CWE-170)
+src/examples/e08_sprintf_overflow/vulnerable.c:23: [BANNED-sprintf] sprintf() has no output bound; use snprintf (CWE-787)
+src/examples/e09_length_integer_overflow/vulnerable.c:35: [BANNED-strcpy] strcpy() does not know the destination size (CWE-120)
+src/examples/e09_length_integer_overflow/vulnerable.c:36: [BANNED-strcat] strcat() does not know the destination size (CWE-120)
+src/examples/e10_out_of_bounds_index/vulnerable.c:30: [RISKY-atoi] atoi()/atol() cannot report errors or overflow (CWE-190)
+src/examples/e16_double_free/vulnerable.c:33: [BANNED-strcpy] strcpy() does not know the destination size (CWE-120)
+src/examples/e18_heap_overflow_malloc/vulnerable.c:33: [BANNED-strcpy] strcpy() does not know the destination size (CWE-120)
+src/examples/e19_signed_unsigned_length/vulnerable.c:28: [RISKY-atoi] atoi()/atol() cannot report errors or overflow (CWE-190)
+banned_functions: 15 finding(s) in 20 file(s)
+[exit code: 1]
+
+$ python3 analysis/banned_functions.py src/examples/*/secure.c
+banned_functions: 0 finding(s) in 20 file(s)
+[exit code: 0]
+```
+<!-- END OUTPUT -->
+
+The secure examples are also part of the CI gates: Cppcheck and the
+banned-API scan must report nothing for `src/examples/*/secure.c`.
+
+### 9.6 Learning outcomes from the examples
+
+1. Every string API needs a **size** and a **result check**: bounded copy
+   (E01, E02, E07), bounded formatting (E08), bounded input (E04, E05), and
+   explicit length arithmetic in `size_t` with overflow checks (E09, E18, E19).
+2. Many fixes are about **validating before use**: indexes (E10), sizes
+   (E17, E19), file names (E14), command arguments (E13) and token structure
+   (E20).
+3. Memory ownership must be simple — one owner, one `free()`, pointer set to
+   `NULL` (E15, E16).
+4. Avoid APIs that cannot be used safely or hide state: `gets` (E05),
+   `system()` with user text (E13), `strtok` (E20), `atoi` (E10, E19).
+5. Run-time tools find memory errors that tests may not see (E18), but they
+   cannot find logic bugs (E03, E13, E14, E20) — both are needed.
+
+---
+
+## 10. Conclusion and future work
+
+### 10.1 Conclusion
 
 The project implemented the Phase-I design end to end. The vulnerable
 programs demonstrated, with real output, the consequences of unbounded string
@@ -2853,7 +3201,7 @@ field, corruption of neighbouring buffers, an overwritten return address,
 leakage of a simulated secret, and crashes. The secure programs, built on a
 small safe-string library and the workflow *Input → Validation → Length check
 → Safe handling → Output verification → Result*, rejected every malicious or
-malformed input with a clear reason and passed all 123 tests with ASan and
+malformed input with a clear reason and passed all 213 tests with ASan and
 UBSan enabled. All analysis tools report zero findings in the secure code.
 
 The comparison of tools was one of the most useful results: AddressSanitizer
@@ -2863,7 +3211,14 @@ and none of them can see missing validation. Prevention by design, supported
 by several detection layers and systematic tests, is what made the secure
 version reliable.
 
-### 9.2 Future work
+Twenty additional small examples (Section 9) extended the same approach to
+`gets`, off-by-one loops, missing terminators, length-calculation overflow,
+out-of-bounds indexes, `memcpy` sizes, command injection, path traversal,
+use-after-free, double free, unchecked `malloc`, signed/unsigned lengths and
+`strtok`. The vulnerable versions showed a defect in 52 of 90 test cases; the
+secure versions passed all 90.
+
+### 10.2 Future work
 
 * Add fuzzing (libFuzzer or AFL++) for `validate_input` and `input_read_line`.
 * Compare with C11 Annex K (`strcpy_s`, `strcat_s`) and `strlcpy`/`strlcat`.
@@ -2872,7 +3227,7 @@ version reliable.
 
 ---
 
-## 10. References
+## 11. References
 
 1. MITRE, *Common Weakness Enumeration*: CWE-20, CWE-120, CWE-121, CWE-134,
    CWE-158, CWE-170, CWE-190, CWE-193, CWE-195, CWE-200, CWE-242, CWE-252,
@@ -2897,7 +3252,7 @@ git clone https://github.com/Anand8k7/string-vuln-prevention.git
 cd string-vuln-prevention
 
 make clean && make all asan     # build
-make test                       # 123 tests
+make test                       # 213 tests
 make analyze                    # gcc, cppcheck, banned scan, ASan, Valgrind
 
 # regenerate every output shown in this report and refresh the report
@@ -2931,6 +3286,113 @@ gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wfor
 gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/secure/q1_overflow.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/secure/q1_overflow -pie -Wl,-z,relro,-z,now
 gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/secure/q2_format.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/secure/q2_format -pie -Wl,-z,relro,-z,now
 [secure] built: bin/secure/q1_overflow bin/secure/q2_format
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e01_strcpy_overflow/vulnerable.c -o bin/examples/e01_strcpy_overflow/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e01_strcpy_overflow/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e01_strcpy_overflow/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e01_strcpy_overflow/vulnerable.c -o bin/examples/e01_strcpy_overflow/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e01_strcpy_overflow/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e01_strcpy_overflow/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e02_strcat_overflow/vulnerable.c -o bin/examples/e02_strcat_overflow/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e02_strcat_overflow/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e02_strcat_overflow/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e02_strcat_overflow/vulnerable.c -o bin/examples/e02_strcat_overflow/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e02_strcat_overflow/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e02_strcat_overflow/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e03_format_string/vulnerable.c -o bin/examples/e03_format_string/vulnerable 
+src/examples/e03_format_string/vulnerable.c: In function ‘main’:
+src/examples/e03_format_string/vulnerable.c:21:5: warning: format not a string literal and no format arguments [-Wformat-security]
+   21 |     printf(argv[1]);                /* BUG: user text as format */
+      |     ^~~~~~
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e03_format_string/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e03_format_string/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e03_format_string/vulnerable.c -o bin/examples/e03_format_string/vulnerable_asan -fsanitize=address,undefined
+src/examples/e03_format_string/vulnerable.c: In function ‘main’:
+src/examples/e03_format_string/vulnerable.c:21:5: warning: format not a string literal and no format arguments [-Wformat-security]
+   21 |     printf(argv[1]);                /* BUG: user text as format */
+      |     ^~~~~~
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e03_format_string/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e03_format_string/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e04_scanf_no_width/vulnerable.c -o bin/examples/e04_scanf_no_width/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e04_scanf_no_width/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e04_scanf_no_width/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e04_scanf_no_width/vulnerable.c -o bin/examples/e04_scanf_no_width/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e04_scanf_no_width/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e04_scanf_no_width/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e05_gets/vulnerable.c -o bin/examples/e05_gets/vulnerable 
+/usr/bin/ld: /tmp/ccHYQycv.o: in function `main':
+src/examples/e05_gets/vulnerable.c:22:(.text+0x14): warning: the `gets' function is dangerous and should not be used.
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e05_gets/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e05_gets/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e05_gets/vulnerable.c -o bin/examples/e05_gets/vulnerable_asan -fsanitize=address,undefined
+/usr/bin/ld: /tmp/ccpsuIhY.o: in function `main':
+src/examples/e05_gets/vulnerable.c:22:(.text+0x7b): warning: the `gets' function is dangerous and should not be used.
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e05_gets/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e05_gets/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e06_off_by_one_loop/vulnerable.c -o bin/examples/e06_off_by_one_loop/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e06_off_by_one_loop/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e06_off_by_one_loop/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e06_off_by_one_loop/vulnerable.c -o bin/examples/e06_off_by_one_loop/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e06_off_by_one_loop/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e06_off_by_one_loop/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e07_strncpy_no_terminator/vulnerable.c -o bin/examples/e07_strncpy_no_terminator/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e07_strncpy_no_terminator/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e07_strncpy_no_terminator/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e07_strncpy_no_terminator/vulnerable.c -o bin/examples/e07_strncpy_no_terminator/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e07_strncpy_no_terminator/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e07_strncpy_no_terminator/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e08_sprintf_overflow/vulnerable.c -o bin/examples/e08_sprintf_overflow/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e08_sprintf_overflow/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e08_sprintf_overflow/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e08_sprintf_overflow/vulnerable.c -o bin/examples/e08_sprintf_overflow/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e08_sprintf_overflow/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e08_sprintf_overflow/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e09_length_integer_overflow/vulnerable.c -o bin/examples/e09_length_integer_overflow/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e09_length_integer_overflow/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e09_length_integer_overflow/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e09_length_integer_overflow/vulnerable.c -o bin/examples/e09_length_integer_overflow/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e09_length_integer_overflow/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e09_length_integer_overflow/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e10_out_of_bounds_index/vulnerable.c -o bin/examples/e10_out_of_bounds_index/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e10_out_of_bounds_index/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e10_out_of_bounds_index/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e10_out_of_bounds_index/vulnerable.c -o bin/examples/e10_out_of_bounds_index/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e10_out_of_bounds_index/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e10_out_of_bounds_index/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e11_unterminated_strlen/vulnerable.c -o bin/examples/e11_unterminated_strlen/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e11_unterminated_strlen/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e11_unterminated_strlen/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e11_unterminated_strlen/vulnerable.c -o bin/examples/e11_unterminated_strlen/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e11_unterminated_strlen/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e11_unterminated_strlen/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e12_memcpy_wrong_size/vulnerable.c -o bin/examples/e12_memcpy_wrong_size/vulnerable 
+src/examples/e12_memcpy_wrong_size/vulnerable.c: In function ‘main’:
+src/examples/e12_memcpy_wrong_size/vulnerable.c:26:5: warning: ‘memcpy’ writing 64 bytes into a region of size 16 overflows the destination [-Wstringop-overflow=]
+   26 |     memcpy(dst, src, sizeof src);               /* BUG: wrong size */
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/examples/e12_memcpy_wrong_size/vulnerable.c:19:10: note: destination object ‘dst’ of size 16
+   19 |     char dst[16];
+      |          ^~~
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e12_memcpy_wrong_size/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e12_memcpy_wrong_size/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e12_memcpy_wrong_size/vulnerable.c -o bin/examples/e12_memcpy_wrong_size/vulnerable_asan -fsanitize=address,undefined
+src/examples/e12_memcpy_wrong_size/vulnerable.c: In function ‘main’:
+src/examples/e12_memcpy_wrong_size/vulnerable.c:26:5: warning: ‘memcpy’ forming offset [16, 63] is out of the bounds [0, 16] of object ‘dst’ with type ‘char[16]’ [-Warray-bounds=]
+   26 |     memcpy(dst, src, sizeof src);               /* BUG: wrong size */
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/examples/e12_memcpy_wrong_size/vulnerable.c:19:10: note: ‘dst’ declared here
+   19 |     char dst[16];
+      |          ^~~
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e12_memcpy_wrong_size/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e12_memcpy_wrong_size/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e13_command_injection/vulnerable.c -o bin/examples/e13_command_injection/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e13_command_injection/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e13_command_injection/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e13_command_injection/vulnerable.c -o bin/examples/e13_command_injection/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e13_command_injection/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e13_command_injection/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e14_path_traversal/vulnerable.c -o bin/examples/e14_path_traversal/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e14_path_traversal/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e14_path_traversal/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e14_path_traversal/vulnerable.c -o bin/examples/e14_path_traversal/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e14_path_traversal/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e14_path_traversal/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e15_use_after_free/vulnerable.c -o bin/examples/e15_use_after_free/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e15_use_after_free/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e15_use_after_free/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e15_use_after_free/vulnerable.c -o bin/examples/e15_use_after_free/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e15_use_after_free/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e15_use_after_free/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e16_double_free/vulnerable.c -o bin/examples/e16_double_free/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e16_double_free/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e16_double_free/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e16_double_free/vulnerable.c -o bin/examples/e16_double_free/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e16_double_free/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e16_double_free/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e17_unchecked_malloc/vulnerable.c -o bin/examples/e17_unchecked_malloc/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e17_unchecked_malloc/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e17_unchecked_malloc/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e17_unchecked_malloc/vulnerable.c -o bin/examples/e17_unchecked_malloc/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e17_unchecked_malloc/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e17_unchecked_malloc/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e18_heap_overflow_malloc/vulnerable.c -o bin/examples/e18_heap_overflow_malloc/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e18_heap_overflow_malloc/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e18_heap_overflow_malloc/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e18_heap_overflow_malloc/vulnerable.c -o bin/examples/e18_heap_overflow_malloc/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e18_heap_overflow_malloc/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e18_heap_overflow_malloc/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e19_signed_unsigned_length/vulnerable.c -o bin/examples/e19_signed_unsigned_length/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e19_signed_unsigned_length/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e19_signed_unsigned_length/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e19_signed_unsigned_length/vulnerable.c -o bin/examples/e19_signed_unsigned_length/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e19_signed_unsigned_length/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e19_signed_unsigned_length/secure_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/examples/e20_strtok_reentrancy/vulnerable.c -o bin/examples/e20_strtok_reentrancy/vulnerable 
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/examples/e20_strtok_reentrancy/secure.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/examples/e20_strtok_reentrancy/secure -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e20_strtok_reentrancy/vulnerable.c -o bin/examples/e20_strtok_reentrancy/vulnerable_asan -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/examples/e20_strtok_reentrancy/secure.c src/lib/input_handler.c src/lib/safe_string.c -o bin/examples/e20_strtok_reentrancy/secure_asan -fsanitize=address,undefined
+[examples] built: 20 examples x 4 builds
 gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/vulnerable/q1_overflow.c -o bin/asan/vulnerable_q1_overflow -fsanitize=address,undefined
 gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/vulnerable/q2_format.c -o bin/asan/vulnerable_q2_format -fsanitize=address,undefined
 src/vulnerable/q2_format.c: In function ‘main’:
@@ -2982,3 +3444,5 @@ All screenshots are listed with their exact commands in
 | 23 | `23_banned_api_scan.png` | 6.3 Banned-API scan |
 | 24 | `24_analysis_summary.png` | 6.2 Analysis summary |
 | 25 | `25_ci_github_actions.png` | 8 Continuous integration |
+| 26 | `26_examples_test_table.png` | 9.3 Examples test run |
+| 27 | `27_examples_demos.png` | 9.4 Examples demonstrations |

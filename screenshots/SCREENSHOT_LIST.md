@@ -69,6 +69,13 @@ make clean && make all asan && make test >/dev/null   # build everything once
 | 24 | `24_analysis_summary.png` | `make analyze 2>&1 \| tail -32` | 6.2 Analysis summary (Figure 24) |
 | 25 | `25_ci_github_actions.png` | Browser: GitHub repository → **Actions** → latest **CI** run, all steps green | 8 Continuous integration (Figure 25) |
 
+## 20 additional examples
+
+| # | Filename | Command | Report section |
+|---|----------|---------|----------------|
+| 26 | `26_examples_test_table.png` | `bash tests/scenarios/examples.sh` (90 rows, ≈170 columns wide — two captures are fine) | 9.3 Examples test run (Figure 26) |
+| 27 | `27_examples_demos.png` | `./bin/examples/e13_command_injection/vulnerable 'dave; echo INJECTED'; ./bin/examples/e13_command_injection/secure 'dave; echo INJECTED'; ./bin/examples/e14_path_traversal/vulnerable ../secret.txt; ./bin/examples/e14_path_traversal/secure ../secret.txt` | 9.4 Examples demonstrations (Figure 27) |
+
 ## Checklist
 
 - [ ] 01_toolchain_versions.png
@@ -96,3 +103,5 @@ make clean && make all asan && make test >/dev/null   # build everything once
 - [ ] 23_banned_api_scan.png
 - [ ] 24_analysis_summary.png
 - [ ] 25_ci_github_actions.png
+- [ ] 26_examples_test_table.png
+- [ ] 27_examples_demos.png

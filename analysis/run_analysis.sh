@@ -82,9 +82,10 @@ if have cppcheck; then
               --suppress=missingIncludeSystem --suppress=checkersReport
               -Isrc/lib --template='{file}:{line}: {severity}: {message} [{id}]' -q)
     "${CPPCHECK[@]}" src/vulnerable > "$LOG/cppcheck_vulnerable.log" 2>&1
-    # The library is analysed together with its callers (secure programs and
-    # tests); on its own every public function looks "unused".
-    "${CPPCHECK[@]}" src/secure src/lib tests > "$LOG/cppcheck_secure.log" 2>&1
+    # The library is analysed together with its callers (secure programs,
+    # tests and the secure examples); on its own every public function
+    # looks "unused".
+    "${CPPCHECK[@]}" src/secure src/lib tests src/examples/*/secure.c > "$LOG/cppcheck_secure.log" 2>&1
     pv=$(grep -c ': \(error\|warning\|style\|performance\|portability\): ' "$LOG/cppcheck_vulnerable.log" || true)
     ps=$(grep -c ': \(error\|warning\|style\|performance\|portability\): ' "$LOG/cppcheck_secure.log" || true)
     sed 's/^/  /' "$LOG/cppcheck_vulnerable.log"
@@ -101,7 +102,7 @@ fi
 # -----------------------------------------------------------------------------
 banner "3. Banned string API scan (analysis/banned_functions.py)"
 python3 analysis/banned_functions.py src/vulnerable > "$LOG/banned_vulnerable.log" 2>&1
-python3 analysis/banned_functions.py src/secure src/lib > "$LOG/banned_secure.log" 2>&1
+python3 analysis/banned_functions.py src/secure src/lib src/examples/*/secure.c > "$LOG/banned_secure.log" 2>&1
 bv=$(grep -c '\[' "$LOG/banned_vulnerable.log" || true)
 bs=$(grep -c '\[' "$LOG/banned_secure.log" || true)
 sed 's/^/  /' "$LOG/banned_vulnerable.log"
@@ -211,5 +212,8 @@ fi
     fi
     echo "Logs: analysis/logs/"
 } | tee "$LOG/summary.txt"
+
+# Valgrind can still leave vgcore.<pid> files for the expected crashes.
+rm -f vgcore.*
 
 [ $SECURE_OK -eq 1 ]

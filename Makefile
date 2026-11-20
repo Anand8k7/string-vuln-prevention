@@ -7,6 +7,7 @@
 #    make vulnerable   -> build deliberately unsafe demos   (bin/vulnerable/)
 #    make secure       -> build fixed programs + safe lib   (bin/secure/)
 #    make asan         -> build BOTH with AddressSanitizer  (bin/asan/)
+#    make examples     -> build the 20 small examples       (bin/examples/)
 #    make test         -> build and run the test suite (PASS/FAIL table)
 #    make analyze      -> cppcheck + ASan + Valgrind, logs in analysis/logs/
 #    make clean        -> remove all build output
@@ -67,12 +68,17 @@ ASAN_VULN  := $(patsubst src/vulnerable/%.c,$(BIN)/asan/vulnerable_%,$(VULN_SRC)
 ASAN_SEC   := $(patsubst src/secure/%.c,$(BIN)/asan/secure_%,$(SECURE_SRC))
 TEST_BIN   := $(patsubst tests/%.c,$(BIN)/tests/%,$(TEST_SRC))
 
-.PHONY: all lib vulnerable secure asan test analyze clean help
+# 20 small examples: src/examples/eNN_name/{vulnerable.c,secure.c}
+# -> bin/examples/eNN_name/{vulnerable,secure,vulnerable_asan,secure_asan}
+EX_NAMES   := $(notdir $(patsubst %/vulnerable.c,%,$(wildcard src/examples/*/vulnerable.c)))
+EX_BIN     := $(foreach e,$(EX_NAMES),$(addprefix $(BIN)/examples/$(e)/,vulnerable secure vulnerable_asan secure_asan))
 
-all: vulnerable secure
+.PHONY: all lib vulnerable secure asan examples test analyze clean help
+
+all: vulnerable secure examples
 
 help:
-	@sed -n '5,13p' Makefile
+	@sed -n '5,14p' Makefile
 
 # -----------------------------------------------------------------------------
 # Build rules
@@ -102,6 +108,27 @@ $(BIN)/asan/vulnerable_%: src/vulnerable/%.c Makefile | $(BIN)/asan
 	$(CC) $(ASAN_CFLAGS) $< -o $@ $(ASAN_LDFLAGS)
 
 $(BIN)/asan/secure_%: src/secure/%.c $(LIB_SRC) $(LIB_HDR) Makefile | $(BIN)/asan
+	$(CC) $(ASAN_CFLAGS) $< $(LIB_SRC) -o $@ $(ASAN_LDFLAGS)
+
+# 20 small examples. Same flag sets as the main programs; the secure
+# versions link the safe-string library.
+examples: $(EX_BIN)
+	@echo "[examples] built: $(words $(EX_NAMES)) examples x 4 builds"
+
+$(BIN)/examples/%/vulnerable: src/examples/%/vulnerable.c Makefile
+	@mkdir -p $(@D)
+	$(CC) $(VULN_CFLAGS) $< -o $@ $(VULN_LDFLAGS)
+
+$(BIN)/examples/%/secure: src/examples/%/secure.c $(LIB_OBJ) $(LIB_HDR) Makefile
+	@mkdir -p $(@D)
+	$(CC) $(SECURE_CFLAGS) $< $(LIB_OBJ) -o $@ $(SECURE_LDFLAGS)
+
+$(BIN)/examples/%/vulnerable_asan: src/examples/%/vulnerable.c Makefile
+	@mkdir -p $(@D)
+	$(CC) $(ASAN_CFLAGS) $< -o $@ $(ASAN_LDFLAGS)
+
+$(BIN)/examples/%/secure_asan: src/examples/%/secure.c $(LIB_SRC) $(LIB_HDR) Makefile
+	@mkdir -p $(@D)
 	$(CC) $(ASAN_CFLAGS) $< $(LIB_SRC) -o $@ $(ASAN_LDFLAGS)
 
 # Test programs are built with ASan + UBSan (and -Werror) so any memory error

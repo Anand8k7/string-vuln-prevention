@@ -5,8 +5,9 @@
 #  Fails the build if:
 #    - the secure code or the library does not compile with -Werror,
 #    - any unit or scenario test fails (make test),
-#    - cppcheck reports anything in src/secure, src/lib or tests,
-#    - the banned-API scan finds an unsafe call in src/secure or src/lib,
+#    - cppcheck reports anything in src/secure, src/lib, tests or the
+#      secure versions of the 20 examples (src/examples/*/secure.c),
+#    - the banned-API scan finds an unsafe call in any of that secure code,
 #    - the full analysis (ASan + Valgrind) finds a problem in secure code.
 #  Findings in src/vulnerable are expected and only reported.
 # =============================================================================
@@ -43,16 +44,16 @@ jobs:
       - name: Build (vulnerable + secure + ASan)
         run: make all asan
 
-      - name: Run tests (unit + Q1/Q2 scenarios)
+      - name: Run tests (unit + Q1/Q2 scenarios + 20 examples)
         run: make test
 
-      - name: Cppcheck on secure code, library and tests (must be clean)
+      - name: Cppcheck on secure code, library, tests and secure examples (must be clean)
         run: |
           cppcheck --enable=all --std=c11 --inline-suppr \
                    --suppress=missingIncludeSystem --suppress=checkersReport \
                    -Isrc/lib --error-exitcode=1 \
                    --template='{file}:{line}: {severity}: {message} [{id}]' \
-                   src/secure src/lib tests
+                   src/secure src/lib tests src/examples/*/secure.c
 
       - name: Cppcheck on vulnerable code (informational)
         run: |
@@ -60,10 +61,13 @@ jobs:
                    --suppress=missingIncludeSystem --suppress=checkersReport \
                    -Isrc/lib \
                    --template='{file}:{line}: {severity}: {message} [{id}]' \
-                   src/vulnerable || true
+                   src/vulnerable src/examples/*/vulnerable.c || true
 
-      - name: Banned string API scan on secure code (must be clean)
-        run: python3 analysis/banned_functions.py src/secure src/lib
+      - name: Banned string API scan on secure code and secure examples (must be clean)
+        run: python3 analysis/banned_functions.py src/secure src/lib src/examples/*/secure.c
+
+      - name: Banned string API scan on vulnerable examples (informational)
+        run: python3 analysis/banned_functions.py src/examples/*/vulnerable.c || true
 
       - name: Full analysis (compiler, cppcheck, ASan, Valgrind)
         run: make analyze

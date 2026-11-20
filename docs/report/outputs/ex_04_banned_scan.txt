@@ -1,0 +1,23 @@
+$ python3 analysis/banned_functions.py src/examples/*/vulnerable.c
+src/examples/e01_strcpy_overflow/vulnerable.c:24: [BANNED-strcpy] strcpy() does not know the destination size (CWE-120)
+src/examples/e02_strcat_overflow/vulnerable.c:24: [BANNED-strcat] strcat() does not know the destination size (CWE-120)
+src/examples/e02_strcat_overflow/vulnerable.c:25: [BANNED-strcat] strcat() does not know the destination size (CWE-120)
+src/examples/e03_format_string/vulnerable.c:21: [FORMAT-nonliteral] format string is a variable, not a literal (CWE-134)
+src/examples/e04_scanf_no_width/vulnerable.c:18: [BANNED-scanf-%s] scanf("%s") without a field width (CWE-120)
+src/examples/e05_gets/vulnerable.c:16: [BANNED-gets] gets() cannot limit input length (CWE-242)
+src/examples/e05_gets/vulnerable.c:22: [BANNED-gets] gets() cannot limit input length (CWE-242)
+src/examples/e07_strncpy_no_terminator/vulnerable.c:24: [RISKY-strncpy] strncpy() may leave the result unterminated (CWE-170)
+src/examples/e08_sprintf_overflow/vulnerable.c:23: [BANNED-sprintf] sprintf() has no output bound; use snprintf (CWE-787)
+src/examples/e09_length_integer_overflow/vulnerable.c:35: [BANNED-strcpy] strcpy() does not know the destination size (CWE-120)
+src/examples/e09_length_integer_overflow/vulnerable.c:36: [BANNED-strcat] strcat() does not know the destination size (CWE-120)
+src/examples/e10_out_of_bounds_index/vulnerable.c:30: [RISKY-atoi] atoi()/atol() cannot report errors or overflow (CWE-190)
+src/examples/e16_double_free/vulnerable.c:33: [BANNED-strcpy] strcpy() does not know the destination size (CWE-120)
+src/examples/e18_heap_overflow_malloc/vulnerable.c:33: [BANNED-strcpy] strcpy() does not know the destination size (CWE-120)
+src/examples/e19_signed_unsigned_length/vulnerable.c:28: [RISKY-atoi] atoi()/atol() cannot report errors or overflow (CWE-190)
+banned_functions: 15 finding(s) in 20 file(s)
+[exit code: 1]
+
+$ python3 analysis/banned_functions.py src/examples/*/secure.c
+banned_functions: 0 finding(s) in 20 file(s)
+[exit code: 0]
+
