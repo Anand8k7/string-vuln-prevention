@@ -105,6 +105,28 @@ make clean      # remove build output and logs
 | secure     | `-Wall -Wextra -Werror -Wformat=2 -Wformat-security -Wconversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -pie -z relro -z now` | Warnings are errors, plus compiler/linker hardening |
 | asan       | `-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer` | Runtime detection of overflows and undefined behaviour |
 
+### Safe string library (`src/lib/`)
+
+All functions take the **total** buffer size (`sizeof buf`), never write past
+it, always leave a `'\0'`, and **report** truncation instead of hiding it.
+
+| Function | Replaces | Returns |
+|----------|----------|---------|
+| `safe_copy(dst, size, src)` | `strcpy`, `strncpy` | `SS_OK`, `SS_TRUNCATED`, `SS_ERR_NULL`, `SS_ERR_SIZE` |
+| `safe_concat(dst, size, src)` | `strcat`, `strncat` | as above + `SS_ERR_UNTERMINATED` |
+| `safe_format(dst, size, fmt, ...)` | `sprintf` | as above + `SS_ERR_FORMAT` |
+| `safe_strlen(s, max)` | `strlen` on untrusted data | length, never reads more than `max` bytes |
+| `validate_input(s, min, max, charset, extra, &pos)` | ad-hoc checks | `VAL_OK`, `VAL_ERR_TOO_LONG`, `VAL_ERR_EMPTY`, `VAL_ERR_BAD_CHAR`, … |
+| `validate_integer(s, min, max, &out)` | `atoi`, `scanf("%d")` | `VAL_OK`, `VAL_ERR_NOT_NUMBER`, `VAL_ERR_RANGE`, … |
+| `input_read_line(fp, buf, size, &len)` | `gets`, `scanf("%s")` | `IN_OK`, `IN_TOO_LONG` (rest of line drained), `IN_EOF`, `IN_ERR_NUL_BYTE`, … |
+| `input_from_arg(argc, argv, i, buf, size)` | `strcpy(buf, argv[i])` | `IN_OK`, `IN_TOO_LONG`, `IN_ERR_MISSING`, … |
+| `input_read_file(path, buf, size, &len)` | unchecked `fread`/`fgets` loops | `IN_OK`, `IN_TOO_LONG`, `IN_ERR_IO`, … |
+
+Unit tests (`tests/test_safe_string.c`, `tests/test_input_handler.c`) cover
+normal, boundary, invalid and oversized inputs. Each test also checks
+**guard bytes** placed after the buffer, and the test binaries run under
+AddressSanitizer + UBSan.
+
 ---
 
 ## 5. Safety note
@@ -119,7 +141,7 @@ protections only so that the bugs can be observed. Do not reuse that code.
 ## 6. Project status
 
 - [x] Phase 1 – Skeleton, Makefile, README
-- [ ] Phase 2 – Safe string library and unit tests
+- [x] Phase 2 – Safe string library and unit tests
 - [ ] Phase 3 – Q1: `strcpy`/`strcat` overflow (vulnerable + secure + tests)
 - [ ] Phase 4 – Q2: input validation and format strings (vulnerable + secure + tests)
 - [ ] Phase 5 – Analysis script and CI workflow
