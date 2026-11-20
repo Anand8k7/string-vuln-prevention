@@ -12,6 +12,7 @@ vgcore.*
 analysis/logs/*.log
 analysis/logs/**/*.log
 analysis/logs/**/.stdin
+analysis/logs/summary.txt
 
 # Editor / OS
 .vscode/

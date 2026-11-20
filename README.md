@@ -166,6 +166,28 @@ bash tests/scenarios/q2_format.sh                                     # 26 cases
 | `src/secure/q2_format.c` | `fgets`-based `input_read_line`, whitelist validation, `validate_integer` (1–120), `safe_format` (reject on `SS_TRUNCATED`), fixed format strings only |
 | `tests/scenarios/q2_format.sh` | Runs every case on 4 builds; for accepted input it also checks that the message is echoed **literally** and the simulated secret never appears |
 
+### Analysis (`make analyze`)
+
+`analysis/run_analysis.sh` runs five checks on **both** versions and writes
+every log to `analysis/logs/` (summary in `analysis/logs/summary.txt`):
+
+| Step | Tool | What it finds |
+|------|------|---------------|
+| 1 | gcc `-Wall -Wextra -Wformat=2 -Wformat-overflow=2 ...` | non-literal format strings, provable `sprintf` overflows, ignored `scanf` results |
+| 2 | Cppcheck `--enable=all` | `scanf("%s")` without width, style issues |
+| 3 | `analysis/banned_functions.py` | every `strcpy`/`strcat`/`sprintf`/`gets`/`scanf("%s")`/`printf(var)` call |
+| 4 | AddressSanitizer + UBSan | stack buffer overflows at run time |
+| 5 | Valgrind memcheck | invalid reads, uninitialised values, wild jumps, leaks |
+
+The script exits non-zero only if something is found in the **secure** code.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs on every push and pull request (Ubuntu 24.04):
+build → `make test` → Cppcheck on secure code (must be clean) → banned-API
+scan on secure code (must be clean) → `make analyze`. The logs are uploaded
+as the `analysis-logs` artifact.
+
 ---
 
 ## 5. Safety note
@@ -185,5 +207,5 @@ being leaked; no `%n` (memory write) input is used. Do not reuse that code.
 - [x] Phase 2 – Safe string library and unit tests
 - [x] Phase 3 – Q1: `strcpy`/`strcat` overflow (vulnerable + secure + tests)
 - [x] Phase 4 – Q2: input validation and format strings (vulnerable + secure + tests)
-- [ ] Phase 5 – Analysis script and CI workflow
+- [x] Phase 5 – Analysis script and CI workflow
 - [ ] Phase 6 – Final report (`docs/report/report.md`)

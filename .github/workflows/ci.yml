@@ -1,0 +1,77 @@
+# =============================================================================
+#  CI for CYE551 Mini Project: Implementing Prevention Methods for String
+#  Vulnerabilities. Runs on every push and pull request.
+#
+#  Fails the build if:
+#    - the secure code or the library does not compile with -Werror,
+#    - any unit or scenario test fails (make test),
+#    - cppcheck reports anything in src/secure, src/lib or tests,
+#    - the banned-API scan finds an unsafe call in src/secure or src/lib,
+#    - the full analysis (ASan + Valgrind) finds a problem in secure code.
+#  Findings in src/vulnerable are expected and only reported.
+# =============================================================================
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-analyze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cppcheck valgrind
+
+      - name: Tool versions
+        run: |
+          gcc --version | head -n1
+          cppcheck --version
+          valgrind --version
+
+      - name: Build (vulnerable + secure + ASan)
+        run: make all asan
+
+      - name: Run tests (unit + Q1/Q2 scenarios)
+        run: make test
+
+      - name: Cppcheck on secure code, library and tests (must be clean)
+        run: |
+          cppcheck --enable=all --std=c11 --inline-suppr \
+                   --suppress=missingIncludeSystem --suppress=checkersReport \
+                   -Isrc/lib --error-exitcode=1 \
+                   --template='{file}:{line}: {severity}: {message} [{id}]' \
+                   src/secure src/lib tests
+
+      - name: Cppcheck on vulnerable code (informational)
+        run: |
+          cppcheck --enable=all --std=c11 \
+                   --suppress=missingIncludeSystem --suppress=checkersReport \
+                   -Isrc/lib \
+                   --template='{file}:{line}: {severity}: {message} [{id}]' \
+                   src/vulnerable || true
+
+      - name: Banned string API scan on secure code (must be clean)
+        run: python3 analysis/banned_functions.py src/secure src/lib
+
+      - name: Full analysis (compiler, cppcheck, ASan, Valgrind)
+        run: make analyze
+
+      - name: Upload analysis and test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-logs
+          path: analysis/logs/
+          if-no-files-found: ignore
