@@ -144,6 +144,28 @@ bash tests/scenarios/q1_overflow.sh                    # 17 cases, vulnerable vs
 | `src/secure/q1_overflow.c` | Workflow: bounded input → whitelist validation → `safe_copy`/`safe_concat`/`safe_format` (reject on `SS_TRUNCATED`) → output verification |
 | `tests/scenarios/q1_overflow.sh` | Runs every case on 4 builds (vulnerable, vulnerable+ASan, secure, secure+ASan) |
 
+### Q2 – Input validation and unsafe formatting
+
+`q2_format` is a small feedback form that reads **Name**, **Age** and
+**Message** from standard input, one per line.
+
+```bash
+make all asan
+printf 'alice\n21\nhello\n'            | ./bin/vulnerable/q2_format   # normal
+printf 'alice\n21\n%%p.%%p.%%p.%%p\n'      | ./bin/vulnerable/q2_format   # printf(msg): stack values printed
+printf 'alice\n21\n50%% off!\n'          | ./bin/vulnerable/q2_format   # even innocent text is misformatted
+printf 'alice\nabc\nhello\n'           | ./bin/vulnerable/q2_format   # unchecked scanf("%d"): fields shift
+printf 'alice\n21\n%%p.%%p.%%p.%%p\n'      | ./bin/secure/q2_format       # printed literally
+printf 'alice\nabc\nhello\n'           | ./bin/secure/q2_format       # REJECTED: age is not a whole number
+bash tests/scenarios/q2_format.sh                                     # 26 cases, vulnerable vs secure
+```
+
+| Source | Description |
+|--------|-------------|
+| `src/vulnerable/q2_format.c` | `scanf("%s")`, unchecked `scanf("%d")`, `sprintf` into `record[64]`, `printf(msg)` |
+| `src/secure/q2_format.c` | `fgets`-based `input_read_line`, whitelist validation, `validate_integer` (1–120), `safe_format` (reject on `SS_TRUNCATED`), fixed format strings only |
+| `tests/scenarios/q2_format.sh` | Runs every case on 4 builds; for accepted input it also checks that the message is echoed **literally** and the simulated secret never appears |
+
 ---
 
 ## 5. Safety note
@@ -151,7 +173,9 @@ bash tests/scenarios/q1_overflow.sh                    # 17 cases, vulnerable vs
 The programs in `src/vulnerable/` are intentionally insecure **teaching
 examples**. They only read local input (keyboard, command-line arguments,
 local files), contain no exploit payloads, and are built without
-protections only so that the bugs can be observed. Do not reuse that code.
+protections only so that the bugs can be observed. The Q2 format-string
+tests only *read* memory (`%p`, `%lx`, `%s`) to show a simulated secret
+being leaked; no `%n` (memory write) input is used. Do not reuse that code.
 
 ---
 
@@ -160,6 +184,6 @@ protections only so that the bugs can be observed. Do not reuse that code.
 - [x] Phase 1 – Skeleton, Makefile, README
 - [x] Phase 2 – Safe string library and unit tests
 - [x] Phase 3 – Q1: `strcpy`/`strcat` overflow (vulnerable + secure + tests)
-- [ ] Phase 4 – Q2: input validation and format strings (vulnerable + secure + tests)
+- [x] Phase 4 – Q2: input validation and format strings (vulnerable + secure + tests)
 - [ ] Phase 5 – Analysis script and CI workflow
 - [ ] Phase 6 – Final report (`docs/report/report.md`)

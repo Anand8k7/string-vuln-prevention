@@ -14,6 +14,10 @@
 #      bin/secure/$PROG           (hardened, safe library)
 #      bin/asan/secure_$PROG      (secure code under ASan + UBSan)
 #  EXPECTED is ACCEPT, REJECT or USAGE and applies to the SECURE version.
+#  Optional hooks a scenario script may define:
+#      sc_defect LOG        - describe visible corruption in a vulnerable run
+#      sc_secure_check LOG  - return non-zero if an ACCEPTED secure run
+#                             produced wrong output
 #  A case PASSES when the secure build gives the expected result AND the
 #  ASan build of the secure code reports no memory error.
 #  The vulnerable columns are observations (what actually happened).
@@ -100,11 +104,13 @@ sc_classify_secure() {
         0) echo "ACCEPT" ;;
         1) echo "USAGE" ;;
         2) # Short form of the rejection message for the table.
-           reason="$(grep -m1 '^REJECTED:' "$log" | sed \
+           reason="$(grep -m1 -o 'REJECTED: .*' "$log" | sed \
                -e 's/^REJECTED: //' -e 's/home directory path/path/' \
                -e 's/ is too long.*/ too long/' -e 's/ would exceed.*/ too long/' \
                -e 's/ contains a character.*/ bad char/' \
-               -e 's/ must not be empty/ empty/' -e 's/ is invalid.*/ invalid/')"
+               -e 's/ must not be empty/ empty/' -e 's/ is invalid.*/ invalid/' \
+               -e 's/ is out of range.*/ out of range/' -e 's/ is not a whole number/ not a number/' \
+               -e 's/ is missing.*/ missing/')"
            echo "REJECT: $reason" ;;
         *) if [ "$rc" -ge 128 ]; then echo "CRASH (SIG$(sig_name "$rc"))";
            else echo "ERROR (exit $rc)"; fi ;;
@@ -135,8 +141,17 @@ sc_case() {
     s="$(sc_classify_secure "$ls" "$rs")"
     if sc_has_sanitizer_error "$lsa"; then sa="ERROR"; else sa="clean"; fi
 
+    # Optional program-specific check of an ACCEPTED secure run (e.g. the
+    # output must echo the input literally). Defined by the scenario script.
+    if [ "$s" = "ACCEPT" ] && declare -F sc_secure_check >/dev/null; then
+        if ! sc_secure_check "$ls"; then
+            s="ACCEPT but OUTPUT WRONG"
+        fi
+    fi
+
     result="FAIL"
-    if [ "${s%%:*}" = "$exp" ] && [ "$sa" = "clean" ] && [ "$rs" -eq "$rsa" ]; then
+    if { [ "$s" = "$exp" ] || [ "${s%%:*}" = "$exp" ]; } &&
+       [ "$sa" = "clean" ] && [ "$rs" -eq "$rsa" ]; then
         result="PASS"
         SC_PASS=$((SC_PASS + 1))
     fi
