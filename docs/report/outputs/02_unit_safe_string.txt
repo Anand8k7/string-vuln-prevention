@@ -1,0 +1,65 @@
+$ ./bin/tests/test_safe_string
+
+=== Test suite: safe_string ===
++--------+-----------+------------------------------------------+--------------------------+--------------------------+--------+
+| ID     | Category  | Description                              | Expected                 | Actual                   | Result |
++--------+-----------+------------------------------------------+--------------------------+--------------------------+--------+
+| SL-01  | Normal    | safe_strlen("hello", 100)                | 5                        | 5                        | PASS   |
+| SL-02  | Boundary  | unterminated 5-byte array, max=5         | 5                        | 5                        | PASS   |
+| SL-03  | Invalid   | NULL pointer                             | 0                        | 0                        | PASS   |
+| SC-01  | Normal    | copy "hello" into buf[16]                | OK,len=5                 | OK,len=5                 | PASS   |
+| SC-02  | Normal    | overlapping copy (src = dst + 2)         | OK,len=3                 | OK,len=3                 | PASS   |
+| SC-03  | Boundary  | 7 chars into buf[8] (exact fit)          | OK,len=7                 | OK,len=7                 | PASS   |
+| SC-04  | Boundary  | 8 chars into buf[8] (one too many)       | TRUNCATED,len=7          | TRUNCATED,len=7          | PASS   |
+| SC-05  | Boundary  | empty source string                      | OK,len=0                 | OK,len=0                 | PASS   |
+| SC-06  | Boundary  | dst_size = 1 (room for '\0' only)        | TRUNCATED,len=0          | TRUNCATED,len=0          | PASS   |
+| SC-07  | Invalid   | dst = NULL                               | ERR_NULL                 | ERR_NULL                 | PASS   |
+| SC-08  | Invalid   | src = NULL (dst becomes "")              | ERR_NULL,len=0           | ERR_NULL,len=0           | PASS   |
+| SC-09  | Invalid   | dst_size = 0 (nothing written)           | ERR_SIZE                 | ERR_SIZE                 | PASS   |
+| SC-10  | Invalid   | dst_size = (size_t)-1 (negative int)     | ERR_SIZE                 | ERR_SIZE                 | PASS   |
+| SC-11  | Oversized | 1000-char string into buf[16]            | TRUNCATED,len=15         | TRUNCATED,len=15         | PASS   |
+| CC-01  | Normal    | "foo" + "bar" in buf[16]                 | OK,len=6                 | OK,len=6                 | PASS   |
+| CC-02  | Boundary  | "abc" + "defg" in buf[8] (exact fit)     | OK,len=7                 | OK,len=7                 | PASS   |
+| CC-03  | Boundary  | "abc" + "defgh" in buf[8] (1 over)       | TRUNCATED,len=7          | TRUNCATED,len=7          | PASS   |
+| CC-04  | Boundary  | append to an already full buffer         | TRUNCATED,len=7          | TRUNCATED,len=7          | PASS   |
+| CC-05  | Invalid   | dst not terminated within dst_size       | ERR_UNTERMINATED,len=7   | ERR_UNTERMINATED,len=7   | PASS   |
+| CC-06  | Invalid   | src = NULL (dst unchanged)               | ERR_NULL,len=3           | ERR_NULL,len=3           | PASS   |
+| CC-07  | Invalid   | dst_size = 0                             | ERR_SIZE                 | ERR_SIZE                 | PASS   |
+| CC-08  | Oversized | "hi" + 1000-char string in buf[16]       | TRUNCATED,len=15         | TRUNCATED,len=15         | PASS   |
+| CC-09  | Oversized | 100 x append "ab" into buf[16]           | TRUNCATED,len=15         | TRUNCATED,len=15         | PASS   |
+| SF-01  | Normal    | format "%s-%d" -> "id-42"                | OK,len=5                 | OK,len=5                 | PASS   |
+| SF-02  | Normal    | user text "%x%x%n" printed literally     | OK,len=6                 | OK,len=6                 | PASS   |
+| SF-03  | Boundary  | INT_MIN into buf[12] (exact fit)         | OK,len=11                | OK,len=11                | PASS   |
+| SF-04  | Boundary  | INT_MIN into buf[11] (one too small)     | TRUNCATED,len=10         | TRUNCATED,len=10         | PASS   |
+| SF-05  | Invalid   | format string = NULL                     | ERR_NULL,len=0           | ERR_NULL,len=0           | PASS   |
+| SF-06  | Invalid   | dst = NULL                               | ERR_NULL                 | ERR_NULL                 | PASS   |
+| SF-07  | Oversized | "Hello %s!" with 1000-char name          | TRUNCATED,len=15         | TRUNCATED,len=15         | PASS   |
+| VI-01  | Normal    | "alice99" alnum, len 1..16               | OK                       | OK                       | PASS   |
+| VI-02  | Normal    | "John Smith" alpha+space                 | OK                       | OK                       | PASS   |
+| VI-03  | Normal    | "a.b-c_d" with extra "._-"               | OK                       | OK                       | PASS   |
+| VI-04  | Boundary  | length == max_len (16)                   | OK                       | OK                       | PASS   |
+| VI-05  | Boundary  | length == max_len + 1 (17)               | ERR_TOO_LONG             | ERR_TOO_LONG             | PASS   |
+| VI-06  | Boundary  | empty string, min_len 1                  | ERR_EMPTY                | ERR_EMPTY                | PASS   |
+| VI-07  | Invalid   | "bob;rm" (';' not allowed)               | ERR_BAD_CHAR@3           | ERR_BAD_CHAR@3           | PASS   |
+| VI-08  | Invalid   | format specifiers "%s%n"                 | ERR_BAD_CHAR@0           | ERR_BAD_CHAR@0           | PASS   |
+| VI-09  | Invalid   | control character (TAB)                  | ERR_BAD_CHAR@3           | ERR_BAD_CHAR@3           | PASS   |
+| VI-10  | Invalid   | non-ASCII UTF-8 byte                     | ERR_BAD_CHAR@3           | ERR_BAD_CHAR@3           | PASS   |
+| VI-11  | Invalid   | NULL input                               | ERR_NULL                 | ERR_NULL                 | PASS   |
+| VI-12  | Oversized | 10000-char string, max_len 16            | ERR_TOO_LONG             | ERR_TOO_LONG             | PASS   |
+| VI-13  | Oversized | unterminated 17-byte heap buffer         | ERR_TOO_LONG             | ERR_TOO_LONG             | PASS   |
+| VN-01  | Normal    | "42" in [0,150]                          | OK,42                    | OK,42                    | PASS   |
+| VN-02  | Normal    | "-5" in [-10,10]                         | OK,-5                    | OK,-5                    | PASS   |
+| VN-03  | Boundary  | "0" = min                                | OK,0                     | OK,0                     | PASS   |
+| VN-04  | Boundary  | "150" = max                              | OK,150                   | OK,150                   | PASS   |
+| VN-05  | Boundary  | "151" = max + 1                          | ERR_RANGE                | ERR_RANGE                | PASS   |
+| VN-06  | Boundary  | "-1" = min - 1                           | ERR_RANGE                | ERR_RANGE                | PASS   |
+| VN-07  | Invalid   | empty string                             | ERR_EMPTY                | ERR_EMPTY                | PASS   |
+| VN-08  | Invalid   | "12a" (trailing junk)                    | ERR_NOT_NUMBER           | ERR_NOT_NUMBER           | PASS   |
+| VN-09  | Invalid   | " 42" (leading space)                    | ERR_NOT_NUMBER           | ERR_NOT_NUMBER           | PASS   |
+| VN-10  | Invalid   | "+42" (plus sign)                        | ERR_NOT_NUMBER           | ERR_NOT_NUMBER           | PASS   |
+| VN-11  | Invalid   | "-" (sign only)                          | ERR_NOT_NUMBER           | ERR_NOT_NUMBER           | PASS   |
+| VN-12  | Oversized | 23-digit number (overflows long)         | ERR_RANGE                | ERR_RANGE                | PASS   |
++--------+-----------+------------------------------------------+--------------------------+--------------------------+--------+
+Summary [safe_string]: 55/55 passed, 0 failed
+[exit code: 0]
+

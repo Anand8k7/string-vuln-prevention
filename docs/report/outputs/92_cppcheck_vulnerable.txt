@@ -1,0 +1,12 @@
+$ cppcheck --enable=all --std=c11 --suppress=missingIncludeSystem --suppress=checkersReport -Isrc/lib -q src/vulnerable
+src/vulnerable/q1_overflow.c:41:26: style: Parameter 'argv' can be declared as const array [constParameter]
+int main(int argc, char *argv[])
+                         ^
+src/vulnerable/q2_format.c:47:5: warning: scanf() without field width limits can crash with huge input data. [invalidscanf]
+    scanf("%s", name);            /* [B1] unbounded %s */
+    ^
+src/vulnerable/q2_format.c:53:5: warning: scanf() without field width limits can crash with huge input data. [invalidscanf]
+    scanf("%s", msg);             /* [B1] unbounded %s again */
+    ^
+[exit code: 0]
+

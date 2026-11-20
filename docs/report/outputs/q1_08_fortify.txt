@@ -1,0 +1,7 @@
+$ gcc -std=c11 -O2 -D_FORTIFY_SOURCE=2 src/vulnerable/q1_overflow.c -o bin/q1_overflow_fortify
+[exit code: 0]
+
+$ ./bin/q1_overflow_fortify $A16 cse
+*** buffer overflow detected ***: terminated
+[exit code: 134]
+

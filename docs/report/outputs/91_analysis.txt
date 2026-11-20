@@ -1,0 +1,95 @@
+$ bash analysis/run_analysis.sh
+Analysis run: 2026-11-20 15:30:07 UTC
+Host:         Linux 6.8.0-1070-azure
+gcc:          gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+cppcheck:     Cppcheck 2.13.0
+valgrind:     valgrind-3.22.0
+
+==================== 1. Compiler warnings (gcc -Wall -Wextra -Wformat=2 ...) ====================
+  vulnerable: src/vulnerable/q2_format.c:58:12: warning: format not a string literal and no format arguments [-Wformat-security]
+  vulnerable: src/vulnerable/q2_format.c:47:5: warning: ignoring return value of ‘scanf’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  vulnerable: src/vulnerable/q2_format.c:50:5: warning: ignoring return value of ‘scanf’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  vulnerable: src/vulnerable/q2_format.c:53:5: warning: ignoring return value of ‘scanf’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+  vulnerable: src/vulnerable/q2_format.c:62:41: warning: ‘%s’ directive writing up to 63 bytes into a region of size between 23 and 48 [-Wformat-overflow=]
+vulnerable: 5 warning(s)   secure+lib: 0 warning(s)
+
+==================== 2. Cppcheck (static analysis, --enable=all) ====================
+  src/vulnerable/q1_overflow.c:41: style: Parameter 'argv' can be declared as const array [constParameter]
+  src/vulnerable/q2_format.c:47: warning: scanf() without field width limits can crash with huge input data. [invalidscanf]
+  src/vulnerable/q2_format.c:53: warning: scanf() without field width limits can crash with huge input data. [invalidscanf]
+vulnerable: 3 finding(s)   secure+lib+tests: 0 finding(s)
+
+==================== 3. Banned string API scan (analysis/banned_functions.py) ====================
+  src/vulnerable/q1_overflow.c:53: [BANNED-strcpy] strcpy() does not know the destination size (CWE-120)
+  src/vulnerable/q1_overflow.c:56: [BANNED-strcpy] strcpy() does not know the destination size (CWE-120)
+  src/vulnerable/q1_overflow.c:59: [BANNED-strcpy] strcpy() does not know the destination size (CWE-120)
+  src/vulnerable/q1_overflow.c:60: [BANNED-strcat] strcat() does not know the destination size (CWE-120)
+  src/vulnerable/q1_overflow.c:61: [BANNED-strcat] strcat() does not know the destination size (CWE-120)
+  src/vulnerable/q1_overflow.c:64: [BANNED-strcpy] strcpy() does not know the destination size (CWE-120)
+  src/vulnerable/q1_overflow.c:65: [BANNED-strcat] strcat() does not know the destination size (CWE-120)
+  src/vulnerable/q1_overflow.c:66: [BANNED-strcat] strcat() does not know the destination size (CWE-120)
+  src/vulnerable/q1_overflow.c:67: [BANNED-strcat] strcat() does not know the destination size (CWE-120)
+  src/vulnerable/q2_format.c:47: [BANNED-scanf-%s] scanf("%s") without a field width (CWE-120)
+  src/vulnerable/q2_format.c:47: [UNCHECKED-scanf] scanf() return value is ignored (CWE-252)
+  src/vulnerable/q2_format.c:50: [UNCHECKED-scanf] scanf() return value is ignored (CWE-252)
+  src/vulnerable/q2_format.c:53: [BANNED-scanf-%s] scanf("%s") without a field width (CWE-120)
+  src/vulnerable/q2_format.c:53: [UNCHECKED-scanf] scanf() return value is ignored (CWE-252)
+  src/vulnerable/q2_format.c:58: [FORMAT-nonliteral] format string is a variable, not a literal (CWE-134)
+  src/vulnerable/q2_format.c:62: [BANNED-sprintf] sprintf() has no output bound; use snprintf (CWE-787)
+  banned_functions: 16 finding(s) in 2 file(s)
+vulnerable: 16 finding(s)   secure+lib: 0 finding(s)
+
+==================== 4. AddressSanitizer + UBSan (bin/asan/*) ====================
+case                     vulnerable                   secure                      
+q1_normal                none                         none                        
+q1_user20_intra_struct   none                         none                        
+q1_path_overflow         stack-buffer-overflow        none                        
+q1_user100               stack-buffer-overflow        none                        
+q2_normal                none                         none                        
+q2_fmt_pointers          none                         none                        
+q2_fmt_strings           none                         none                        
+q2_record_overflow       stack-buffer-overflow        none                        
+q2_name40                stack-buffer-overflow        none                        
+
+==================== 5. Valgrind memcheck (bin/vulnerable/*, bin/secure/*) ====================
+case                     vulnerable                   secure                      
+q1_normal                0 errors                     0 errors                    
+q1_user20_intra_struct   0 errors                     0 errors                    
+q1_path_overflow         0 errors                     0 errors                    
+q1_user100               3 err, signal 11 (SIGSEGV)   0 errors                    
+q2_normal                0 errors                     0 errors                    
+q2_fmt_pointers          0 errors                     0 errors                    
+q2_fmt_strings           4 err, signal 11 (SIGSEGV)   0 errors                    
+q2_record_overflow       0 errors                     0 errors                    
+q2_name40                1 err, signal 11 (SIGSEGV)   0 errors                    
+
+=========================== ANALYSIS SUMMARY ===========================
++--------------------------------+----------------------------+----------------------------+
+| Check                          | Vulnerable version         | Secure version             |
++--------------------------------+----------------------------+----------------------------+
+| gcc warnings                   | 5 warning(s)               | 0 warning(s)               |
+| cppcheck                       | 3 finding(s)               | 0 finding(s)               |
+| banned API scan                | 16 finding(s)              | 0 finding(s)               |
+| ASan q1_normal                 | none                       | none                       |
+| ASan q1_user20_intra_struct    | none                       | none                       |
+| ASan q1_path_overflow          | stack-buffer-overflow      | none                       |
+| ASan q1_user100                | stack-buffer-overflow      | none                       |
+| ASan q2_normal                 | none                       | none                       |
+| ASan q2_fmt_pointers           | none                       | none                       |
+| ASan q2_fmt_strings            | none                       | none                       |
+| ASan q2_record_overflow        | stack-buffer-overflow      | none                       |
+| ASan q2_name40                 | stack-buffer-overflow      | none                       |
+| Valgrind q1_normal             | 0 errors                   | 0 errors                   |
+| Valgrind q1_user20_intra_struc | 0 errors                   | 0 errors                   |
+| Valgrind q1_path_overflow      | 0 errors                   | 0 errors                   |
+| Valgrind q1_user100            | 3 err, signal 11 (SIGSEGV) | 0 errors                   |
+| Valgrind q2_normal             | 0 errors                   | 0 errors                   |
+| Valgrind q2_fmt_pointers       | 0 errors                   | 0 errors                   |
+| Valgrind q2_fmt_strings        | 4 err, signal 11 (SIGSEGV) | 0 errors                   |
+| Valgrind q2_record_overflow    | 0 errors                   | 0 errors                   |
+| Valgrind q2_name40             | 1 err, signal 11 (SIGSEGV) | 0 errors                   |
++--------------------------------+----------------------------+----------------------------+
+RESULT: secure code is CLEAN in every check.
+Logs: analysis/logs/
+[exit code: 0]
+

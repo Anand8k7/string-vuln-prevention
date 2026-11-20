@@ -1,0 +1,28 @@
+$ bash tests/scenarios/q1_overflow.sh | grep -v '^TF_RESULT'
+
+=== Scenario suite: q1_overflow (vulnerable vs secure) ===
++-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
+| ID    | Category  | Input                        | Vulnerable (plain)       | Vulnerable (ASan build)        | Expect | Secure result                | S+ASn | Result |
++-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
+| Q1-01 | Normal    | alice cse                    | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q1-02 | Normal    | j.doe-99 ise (allowed ._-)   | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q1-03 | Boundary  | username 15 chars (max)      | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q1-04 | Boundary  | username 16 chars (max+1)    | role wiped ("")          | NOT DETECTED: role wiped ("")  | REJECT | REJECT: username too long    | clean | PASS   |
+| Q1-05 | Boundary  | path = 31 chars (exact fit)  | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q1-06 | Boundary  | path = 32 chars (1 over)     | greeting corrupted       | ASan: stack-buffer-overflow    | REJECT | REJECT: path too long        | clean | PASS   |
+| Q1-07 | Boundary  | user 15 + dept 15 (path 37)  | greeting corrupted       | ASan: stack-buffer-overflow    | REJECT | REJECT: path too long        | clean | PASS   |
+| Q1-08 | Invalid   | empty username               | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: username empty       | clean | PASS   |
+| Q1-09 | Invalid   | username "bob;ls"            | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: username bad char    | clean | PASS   |
+| Q1-10 | Invalid   | username with space          | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: username bad char    | clean | PASS   |
+| Q1-11 | Invalid   | department "cse1" (digit)    | OK (no visible effect)   | OK (no visible effect)         | REJECT | REJECT: department bad char  | clean | PASS   |
+| Q1-12 | Invalid   | missing department argument  | usage error              | usage error                    | USAGE  | USAGE                        | clean | PASS   |
+| Q1-13 | Oversized | username 20 x 'A'            | role overwritten "AAAA"  | NOT DETECTED: role overwritten | REJECT | REJECT: username too long    | clean | PASS   |
+| Q1-14 | Oversized | username 24 x 'A'            | role overwritten "AAAAAA | ASan: stack-buffer-overflow    | REJECT | REJECT: username too long    | clean | PASS   |
+| Q1-15 | Oversized | username 100 x 'A'           | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: username too long    | clean | PASS   |
+| Q1-16 | Oversized | username 5000 x 'A'          | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: username too long    | clean | PASS   |
+| Q1-17 | Oversized | department 100 x 'A'         | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: department too long  | clean | PASS   |
++-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
+Summary [q1_overflow]: 17/17 passed, 0 failed
+Full program output for every run: analysis/logs/scenarios/q1_overflow/
+[exit code: 0]
+

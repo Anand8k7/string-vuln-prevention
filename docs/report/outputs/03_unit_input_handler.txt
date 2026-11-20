@@ -1,0 +1,35 @@
+$ ./bin/tests/test_input_handler
+
+=== Test suite: input_handler ===
++--------+-----------+------------------------------------------+--------------------------+--------------------------+--------+
+| ID     | Category  | Description                              | Expected                 | Actual                   | Result |
++--------+-----------+------------------------------------------+--------------------------+--------------------------+--------+
+| RL-01  | Normal    | "hello\n" into buf[16]                   | OK,len=5                 | OK,len=5                 | PASS   |
+| RL-02  | Normal    | Windows line ending "hi\r\n"             | OK,len=2                 | OK,len=2                 | PASS   |
+| RL-03  | Normal    | two lines read one after another         | OK,"two"                 | OK,"two"                 | PASS   |
+| RL-04  | Boundary  | 7 chars + '\n' into buf[8] (fits)        | OK,len=7                 | OK,len=7                 | PASS   |
+| RL-05  | Boundary  | ...next read gets the next line          | OK,"next"                | OK,"next"                | PASS   |
+| RL-06  | Boundary  | 7 chars at EOF, no '\n', buf[8]          | OK,len=7                 | OK,len=7                 | PASS   |
+| RL-07  | Boundary  | 8 chars into buf[8] (one too many)       | TOO_LONG,len=7           | TOO_LONG,len=7           | PASS   |
+| RL-08  | Boundary  | ...leftover 'h' was drained              | OK,"next"                | OK,"next"                | PASS   |
+| RL-09  | Invalid   | empty input (immediate EOF)              | EOF,len=0                | EOF,len=0                | PASS   |
+| RL-10  | Invalid   | embedded NUL "ab\0cd\n" rejected         | ERR_NUL_BYTE,then "next" | ERR_NUL_BYTE,then "next" | PASS   |
+| RL-11  | Invalid   | embedded NUL on last line (no '\n')      | ERR_NUL_BYTE,len=0       | ERR_NUL_BYTE,len=0       | PASS   |
+| RL-12  | Invalid   | stream = NULL                            | ERR_NULL,len=0           | ERR_NULL,len=0           | PASS   |
+| RL-13  | Invalid   | buf_size = 0 (nothing written)           | ERR_SIZE,len=0           | ERR_SIZE,len=0           | PASS   |
+| RL-14  | Oversized | 5000-char line into buf[16]              | TOO_LONG,len=15          | TOO_LONG,len=15          | PASS   |
+| RL-15  | Oversized | ...next line is read correctly           | OK,"ok"                  | OK,"ok"                  | PASS   |
+| AR-01  | Normal    | argv[1] = "alice" into buf[16]           | OK,len=5                 | OK,len=5                 | PASS   |
+| AR-02  | Boundary  | 7-char argument into buf[8]              | OK,len=7                 | OK,len=7                 | PASS   |
+| AR-03  | Invalid   | argument index past argc                 | ERR_MISSING,len=0        | ERR_MISSING,len=0        | PASS   |
+| AR-04  | Invalid   | negative argument index                  | ERR_MISSING,len=0        | ERR_MISSING,len=0        | PASS   |
+| AR-05  | Oversized | 300-char argument into buf[16]           | TOO_LONG,len=15          | TOO_LONG,len=15          | PASS   |
+| RF-01  | Normal    | 9-byte file into buf[32]                 | OK,len=9                 | OK,len=9                 | PASS   |
+| RF-02  | Boundary  | 7-byte file into buf[8] (exact fit)      | OK,len=7                 | OK,len=7                 | PASS   |
+| RF-03  | Boundary  | 8-byte file into buf[8] (one over)       | TOO_LONG,len=7           | TOO_LONG,len=7           | PASS   |
+| RF-04  | Invalid   | file does not exist                      | ERR_IO,len=0             | ERR_IO,len=0             | PASS   |
+| RF-05  | Oversized | 4096-byte file into buf[16]              | TOO_LONG,len=15          | TOO_LONG,len=15          | PASS   |
++--------+-----------+------------------------------------------+--------------------------+--------------------------+--------+
+Summary [input_handler]: 25/25 passed, 0 failed
+[exit code: 0]
+

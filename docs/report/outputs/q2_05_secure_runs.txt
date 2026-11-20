@@ -1,0 +1,49 @@
+$ printf 'alice\n21\nhello\n' | ./bin/secure/q2_format
+Name: Age: Message: 
+Your message: hello
+Saved record: name=alice age=21 msg=hello
+[exit code: 0]
+
+$ printf 'John Smith\n21\nGreat course, 10/10!\n' | ./bin/secure/q2_format
+Name: Age: Message: 
+Your message: Great course, 10/10!
+Saved record: name=John Smith age=21 msg=Great course, 10/10!
+[exit code: 0]
+
+$ printf 'alice\n21\n%%p.%%p.%%p.%%p\n' | ./bin/secure/q2_format
+Name: Age: Message: 
+Your message: %p.%p.%p.%p
+Saved record: name=alice age=21 msg=%p.%p.%p.%p
+[exit code: 0]
+
+$ printf 'alice\n21\n%%27$lx\n' | ./bin/secure/q2_format
+Name: Age: Message: 
+Your message: %27$lx
+Saved record: name=alice age=21 msg=%27$lx
+[exit code: 0]
+
+$ printf 'alice\n21\n%%s%%s%%s%%s%%s%%s%%s%%s\n' | ./bin/secure/q2_format
+Name: Age: Message: 
+Your message: %s%s%s%s%s%s%s%s
+Saved record: name=alice age=21 msg=%s%s%s%s%s%s%s%s
+[exit code: 0]
+
+$ printf 'alice\nabc\nhello\n' | ./bin/secure/q2_format
+Name: Age: Message: REJECTED: age is not a whole number
+
+[exit code: 2]
+
+$ printf 'alice\n-5\nhello\n' | ./bin/secure/q2_format
+Name: Age: Message: REJECTED: age is out of range (1-120)
+
+[exit code: 2]
+
+$ printf 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n21\nhello\n' | ./bin/secure/q2_format
+Name: REJECTED: name is too long (max 15 characters)
+[exit code: 2]
+
+$ printf 'abcdefghijklmno\n120\n%s\n' $(printf 'B%.0s' {1..40}) | ./bin/secure/q2_format
+Name: Age: Message: REJECTED: record would exceed 63 characters (SS_TRUNCATED)
+
+[exit code: 2]
+

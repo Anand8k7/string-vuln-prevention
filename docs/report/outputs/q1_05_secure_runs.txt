@@ -1,0 +1,38 @@
+$ ./bin/secure/q1_overflow alice cse
+Welcome, alice!
+Username : alice
+Role     : guest
+Home dir : /home/cse/alice
+[exit code: 0]
+
+$ ./bin/secure/q1_overflow $A15 cse
+Welcome, AAAAAAAAAAAAAAA!
+Username : AAAAAAAAAAAAAAA
+Role     : guest
+Home dir : /home/cse/AAAAAAAAAAAAAAA
+[exit code: 0]
+
+$ ./bin/secure/q1_overflow $A16 cse
+REJECTED: username is too long (max 15 characters)
+[exit code: 2]
+
+$ ./bin/secure/q1_overflow $A20 cse
+REJECTED: username is too long (max 15 characters)
+[exit code: 2]
+
+$ ./bin/secure/q1_overflow abcdefghijklmno abcdefghijklmno
+REJECTED: home directory path would exceed 31 characters (SS_TRUNCATED)
+[exit code: 2]
+
+$ ./bin/secure/q1_overflow 'bob;ls' cse
+REJECTED: username contains a character that is not allowed (position 3)
+[exit code: 2]
+
+$ ./bin/secure/q1_overflow '' cse
+REJECTED: username must not be empty
+[exit code: 2]
+
+$ ./bin/secure/q1_overflow $(printf 'A%.0s' {1..100}) cse
+REJECTED: username is too long (max 15 characters)
+[exit code: 2]
+

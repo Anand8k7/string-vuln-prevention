@@ -1,0 +1,4 @@
+$ bash tests/scenarios/q1_overflow.sh | grep '^Summary'
+Summary [q1_overflow]: 5/17 passed, 12 failed
+[exit code: 0]
+

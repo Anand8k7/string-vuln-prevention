@@ -1,0 +1,14 @@
+$ make test 2>&1 | tail -n 11
+
+=================== OVERALL TEST SUMMARY ===================
+Suite                          Passed    Total   Result
+----------------------------   ------    -----   ------
+input_handler                      25       25     PASS
+safe_string                        55       55     PASS
+q1_overflow                        17       17     PASS
+q2_format                          26       26     PASS
+----------------------------   ------    -----   ------
+TOTAL                             123      123     PASS
+============================================================
+[exit code: 0]
+

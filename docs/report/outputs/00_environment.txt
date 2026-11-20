@@ -1,0 +1,20 @@
+$ uname -sr
+Linux 6.8.0-1070-azure
+[exit code: 0]
+
+$ gcc --version | head -n1
+gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+[exit code: 0]
+
+$ cppcheck --version
+Cppcheck 2.13.0
+[exit code: 0]
+
+$ valgrind --version
+valgrind-3.22.0
+[exit code: 0]
+
+$ make --version | head -n1
+GNU Make 4.3
+[exit code: 0]
+

@@ -201,11 +201,25 @@ being leaked; no `%n` (memory write) input is used. Do not reuse that code.
 
 ---
 
-## 6. Project status
+## 6. Report and screenshots
+
+* **Report:** [`docs/report/report.md`](docs/report/report.md) — aim, concept,
+  setup, procedure, full code, real outputs, security analysis (CWE / CERT C),
+  test cases, observations and learning outcomes for Q1 and Q2.
+* **Screenshots:** [`screenshots/SCREENSHOT_LIST.md`](screenshots/SCREENSHOT_LIST.md)
+  lists every figure with its exact command and report section.
+* The output blocks in the report are real program output. To regenerate them:
+
+  ```bash
+  bash docs/report/collect_outputs.sh     # runs every command, saves docs/report/outputs/
+  python3 docs/report/render_report.py    # copies the outputs into report.md
+  ```
+
+## 7. Project status
 
 - [x] Phase 1 – Skeleton, Makefile, README
 - [x] Phase 2 – Safe string library and unit tests
 - [x] Phase 3 – Q1: `strcpy`/`strcat` overflow (vulnerable + secure + tests)
 - [x] Phase 4 – Q2: input validation and format strings (vulnerable + secure + tests)
 - [x] Phase 5 – Analysis script and CI workflow
-- [ ] Phase 6 – Final report (`docs/report/report.md`)
+- [x] Phase 6 – Final report (`docs/report/report.md`)

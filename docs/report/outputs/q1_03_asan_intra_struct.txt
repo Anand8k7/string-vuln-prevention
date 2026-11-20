@@ -1,0 +1,7 @@
+$ ./bin/asan/vulnerable_q1_overflow $A20 cse
+Welcome, AAAAAAAAAAAAAAAAAAAA!
+Username : AAAAAAAAAAAAAAAAAAAA
+Role     : AAAA
+Home dir : /home/cse/AAAAAAAAAAAAAAAAAAAA
+[exit code: 0]
+

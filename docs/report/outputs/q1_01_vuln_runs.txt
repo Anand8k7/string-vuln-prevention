@@ -1,0 +1,38 @@
+$ ./bin/vulnerable/q1_overflow alice cse
+Welcome, alice!
+Username : alice
+Role     : guest
+Home dir : /home/cse/alice
+[exit code: 0]
+
+$ ./bin/vulnerable/q1_overflow $A15 cse
+Welcome, AAAAAAAAAAAAAAA!
+Username : AAAAAAAAAAAAAAA
+Role     : guest
+Home dir : /home/cse/AAAAAAAAAAAAAAA
+[exit code: 0]
+
+$ ./bin/vulnerable/q1_overflow $A16 cse
+Welcome, AAAAAAAAAAAAAAAA!
+Username : AAAAAAAAAAAAAAAA
+Role     : 
+Home dir : /home/cse/AAAAAAAAAAAAAAAA
+[exit code: 0]
+
+$ ./bin/vulnerable/q1_overflow $A20 cse
+Welcome, AAAAAAAAAAAAAAAAAAAA!
+Username : AAAAAAAAAAAAAAAAAAAA
+Role     : AAAA
+Home dir : /home/cse/AAAAAAAAAAAAAAAAAAAA
+[exit code: 0]
+
+$ ./bin/vulnerable/q1_overflow abcdefghijklmno abcdefghijklmno
+klmno
+Username : abcdefghijklmno
+Role     : guest
+Home dir : /home/abcdefghijklmno/abcdefghijklmno
+[exit code: 0]
+
+$ ./bin/vulnerable/q1_overflow $(printf 'A%.0s' {1..100}) cse
+[exit code: 139]
+

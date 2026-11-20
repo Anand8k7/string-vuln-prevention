@@ -1,0 +1,36 @@
+$ make all asan
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/vulnerable/q1_overflow.c -o bin/vulnerable/q1_overflow 
+gcc -std=c11 -Wall -Wextra -O0 -g -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wno-error src/vulnerable/q2_format.c -o bin/vulnerable/q2_format 
+src/vulnerable/q2_format.c: In function ‘main’:
+src/vulnerable/q2_format.c:58:12: warning: format not a string literal and no format arguments [-Wformat-security]
+   58 |     printf(msg);
+      |            ^~~
+src/vulnerable/q2_format.c:62:41: warning: ‘%s’ directive writing up to 63 bytes into a region of size between 23 and 48 [-Wformat-overflow=]
+   62 |     sprintf(record, "name=%s age=%d msg=%s", name, age, msg);
+      |                                         ^~              ~~~
+src/vulnerable/q2_format.c:62:5: note: ‘sprintf’ output between 17 and 105 bytes into a destination of size 64
+   62 |     sprintf(record, "name=%s age=%d msg=%s", name, age, msg);
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[vulnerable] built: bin/vulnerable/q1_overflow bin/vulnerable/q2_format
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib -c src/lib/input_handler.c -o bin/lib/input_handler.o
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib -c src/lib/safe_string.c -o bin/lib/safe_string.o
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/secure/q1_overflow.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/secure/q1_overflow -pie -Wl,-z,relro,-z,now
+gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wformat-overflow=2 -Wformat-truncation=2 -Wstringop-overflow=4 -Wshadow -Wconversion -Wsign-conversion -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -Isrc/lib src/secure/q2_format.c bin/lib/input_handler.o bin/lib/safe_string.o -o bin/secure/q2_format -pie -Wl,-z,relro,-z,now
+[secure] built: bin/secure/q1_overflow bin/secure/q2_format
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/vulnerable/q1_overflow.c -o bin/asan/vulnerable_q1_overflow -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/vulnerable/q2_format.c -o bin/asan/vulnerable_q2_format -fsanitize=address,undefined
+src/vulnerable/q2_format.c: In function ‘main’:
+src/vulnerable/q2_format.c:58:12: warning: format not a string literal and no format arguments [-Wformat-security]
+   58 |     printf(msg);
+      |            ^~~
+src/vulnerable/q2_format.c:62:41: warning: ‘%s’ directive writing up to 63 bytes into a region of size between 23 and 48 [-Wformat-overflow=]
+   62 |     sprintf(record, "name=%s age=%d msg=%s", name, age, msg);
+      |                                         ^~              ~~~
+src/vulnerable/q2_format.c:62:5: note: ‘sprintf’ output between 17 and 105 bytes into a destination of size 64
+   62 |     sprintf(record, "name=%s age=%d msg=%s", name, age, msg);
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/secure/q1_overflow.c src/lib/input_handler.c src/lib/safe_string.c -o bin/asan/secure_q1_overflow -fsanitize=address,undefined
+gcc -std=c11 -Wall -Wextra -O1 -g -fno-omit-frame-pointer -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fsanitize=address,undefined -Isrc/lib src/secure/q2_format.c src/lib/input_handler.c src/lib/safe_string.c -o bin/asan/secure_q2_format -fsanitize=address,undefined
+[asan] built: bin/asan/vulnerable_q1_overflow bin/asan/vulnerable_q2_format bin/asan/secure_q1_overflow bin/asan/secure_q2_format
+[exit code: 0]
+

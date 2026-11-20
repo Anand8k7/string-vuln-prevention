@@ -1,0 +1,4 @@
+$ bash tests/scenarios/q2_format.sh | grep '^Summary'
+Summary [q2_format]: 6/26 passed, 20 failed
+[exit code: 0]
+

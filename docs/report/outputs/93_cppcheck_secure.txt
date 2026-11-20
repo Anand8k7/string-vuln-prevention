@@ -1,0 +1,3 @@
+$ cppcheck --enable=all --std=c11 --suppress=missingIncludeSystem --suppress=checkersReport -Isrc/lib -q src/secure src/lib tests
+[exit code: 0]
+

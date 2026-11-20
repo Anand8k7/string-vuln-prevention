@@ -1,0 +1,8 @@
+$ ./bin/asan/secure_q1_overflow abcdefghijklmno abcdefghijklmno
+REJECTED: home directory path would exceed 31 characters (SS_TRUNCATED)
+[exit code: 2]
+
+$ ./bin/asan/secure_q1_overflow $(printf 'A%.0s' {1..5000}) cse
+REJECTED: username is too long (max 15 characters)
+[exit code: 2]
+

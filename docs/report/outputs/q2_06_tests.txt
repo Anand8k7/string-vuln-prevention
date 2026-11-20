@@ -1,0 +1,37 @@
+$ bash tests/scenarios/q2_format.sh | grep -v '^TF_RESULT'
+
+=== Scenario suite: q2_format (vulnerable vs secure) ===
++-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
+| ID    | Category  | Input                        | Vulnerable (plain)       | Vulnerable (ASan build)        | Expect | Secure result                | S+ASn | Result |
++-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
+| Q2-01 | Normal    | alice / 21 / hello           | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q2-02 | Normal    | name with space, msg w/ punc | age silently = 0         | NOT DETECTED: age silently = 0 | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q2-03 | Normal    | msg "50% off!" (literal %)   | format interpreted       | NOT DETECTED: format interpret | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q2-04 | Boundary  | name 15 chars (max)          | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q2-05 | Boundary  | name 16 chars (max+1)        | invalid input accepted   | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
+| Q2-06 | Boundary  | age 1 (min)                  | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q2-07 | Boundary  | age 120 (max)                | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q2-08 | Boundary  | age 0 (min-1)                | invalid input accepted   | NOT DETECTED: invalid input ac | REJECT | REJECT: age out of range     | clean | PASS   |
+| Q2-09 | Boundary  | age 121 (max+1)              | invalid input accepted   | NOT DETECTED: invalid input ac | REJECT | REJECT: age out of range     | clean | PASS   |
+| Q2-10 | Boundary  | message 40 chars (max)       | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q2-11 | Boundary  | message 41 chars (max+1)     | invalid input accepted   | NOT DETECTED: invalid input ac | REJECT | REJECT: message too long     | clean | PASS   |
+| Q2-12 | Boundary  | record 63 chars (exact fit)  | OK (no visible effect)   | OK (no visible effect)         | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q2-13 | Boundary  | record 73 chars (too long)   | record[64] overflowed    | ASan: stack-buffer-overflow    | REJECT | REJECT: record too long      | clean | PASS   |
+| Q2-14 | Invalid   | age "abc" (not a number)     | fields mixed up          | NOT DETECTED: fields mixed up  | REJECT | REJECT: age not a number     | clean | PASS   |
+| Q2-15 | Invalid   | age "-5" (negative)          | invalid input accepted   | NOT DETECTED: invalid input ac | REJECT | REJECT: age out of range     | clean | PASS   |
+| Q2-16 | Invalid   | age 20 digits (overflow)     | age silently = -1        | NOT DETECTED: age silently = - | REJECT | REJECT: age too long         | clean | PASS   |
+| Q2-17 | Invalid   | name "bob;ls"                | invalid input accepted   | NOT DETECTED: invalid input ac | REJECT | REJECT: name bad char        | clean | PASS   |
+| Q2-18 | Invalid   | message "hi <b>"             | fields mixed up          | NOT DETECTED: fields mixed up  | REJECT | REJECT: message bad char     | clean | PASS   |
+| Q2-19 | Invalid   | fmt: %p.%p.%p.%p             | format interpreted       | NOT DETECTED: format interpret | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q2-20 | Invalid   | fmt: %27$lx (reads secret)   | LEAK: secret_token       | NOT DETECTED: format interpret | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q2-21 | Invalid   | fmt: %s x 8                  | CRASH (SIGSEGV)          | NOT DETECTED: format interpret | ACCEPT | ACCEPT                       | clean | PASS   |
+| Q2-22 | Oversized | name 40 chars                | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
+| Q2-23 | Oversized | name 5000 chars              | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: name too long        | clean | PASS   |
+| Q2-24 | Oversized | message 60 chars             | record[64] overflowed    | ASan: stack-buffer-overflow    | REJECT | REJECT: message too long     | clean | PASS   |
+| Q2-25 | Oversized | message 200 chars            | CRASH (SIGSEGV)          | ASan: stack-buffer-overflow    | REJECT | REJECT: message too long     | clean | PASS   |
+| Q2-26 | Invalid   | message missing (EOF)        | fields mixed up          | NOT DETECTED: invalid input ac | REJECT | REJECT: message missing      | clean | PASS   |
++-------+-----------+------------------------------+--------------------------+--------------------------------+--------+------------------------------+-------+--------+
+Summary [q2_format]: 26/26 passed, 0 failed
+Full program output for every run: analysis/logs/scenarios/q2_format/
+[exit code: 0]
+
