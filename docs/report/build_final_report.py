@@ -50,8 +50,10 @@ FIGS = os.path.join(HERE, "figures")
 
 TITLE = "Implementing Prevention Methods for String Vulnerabilities"
 TEAM = [("Yuval", "1MS24CY021"), ("Anand", "1MS24CY010"), ("Sathish Kumar S", "1MS24CY055")]
-MONO = "Courier New"   # LibreOffice renders it with the metric-compatible Liberation Mono
-TEXT_WIDTH_CM = 16.0
+MONO = "Courier New"
+SERIF = "Times New Roman"
+FIG_WIDTH_CM = 15.0
+TEXT_WIDTH_CM = 16.2
 
 
 # =============================================================================
@@ -225,53 +227,101 @@ class Report:
     # ---------------------------------------------------------------- styles
     def _styles(self):
         st = self.d.styles
+        black = RGBColor(0, 0, 0)
+
+        def font(style, size, bold=None, italic=None, name=SERIF):
+            style.font.name = name
+            rpr = style.element.get_or_add_rPr()
+            rf = rpr.find(qn("w:rFonts"))
+            for a in ("w:ascii", "w:hAnsi", "w:cs", "w:eastAsia"):
+                rf.set(qn(a), name)
+            for a in ("w:asciiTheme", "w:hAnsiTheme", "w:cstheme", "w:eastAsiaTheme"):
+                if rf.get(qn(a)) is not None:
+                    del rf.attrib[qn(a)]
+            style.font.size = Pt(size)
+            if bold is not None:
+                style.font.bold = bold
+            if italic is not None:
+                style.font.italic = italic
+
         body = st.add_style("Report Body", WD_STYLE_TYPE.PARAGRAPH)
         body.base_style = st["Normal"]
-        body.font.size = Pt(12)
+        font(body, 12)
         pf = body.paragraph_format
         pf.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        pf.space_before = Pt(0)
         pf.space_after = Pt(6)
-        pf.line_spacing = 1.15
+        pf.line_spacing = 1.5
+
+        for name, size, before, after in (("Heading 1", 16, 0, 18), ("Heading 2", 14, 12, 6),
+                                          ("Heading 3", 12, 10, 4)):
+            h = st[name]
+            font(h, size, bold=True, italic=False)
+            h.font.underline = False
+            h.font.color.rgb = black
+            h.paragraph_format.space_before = Pt(before)
+            h.paragraph_format.space_after = Pt(after)
+            h.paragraph_format.keep_with_next = True
+            h.paragraph_format.line_spacing = 1.15
+        st["Heading 1"].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        st["Heading 2"].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        st["Heading 3"].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
 
         cap = st.add_style("Caption", WD_STYLE_TYPE.PARAGRAPH)
         cap.base_style = st["Normal"]
-        cap.font.size = Pt(10.5)
-        cap.font.italic = True
-        cap.font.bold = False
+        font(cap, 10.5, bold=False, italic=True)
         cap.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        cap.paragraph_format.space_before = Pt(3)
-        cap.paragraph_format.space_after = Pt(10)
+        cap.paragraph_format.space_before = Pt(4)
+        cap.paragraph_format.space_after = Pt(12)
+        cap.paragraph_format.line_spacing = 1.0
 
         code = st.add_style("Code", WD_STYLE_TYPE.PARAGRAPH)
         code.base_style = st["Normal"]
-        code.font.name = MONO
-        code.font.size = Pt(8.5)
-        code.paragraph_format.space_after = Pt(0)
-        code.paragraph_format.space_before = Pt(0)
-        code.paragraph_format.line_spacing = 1.0
-        code.paragraph_format.left_indent = Cm(0.2)
+        font(code, 9.5, name=MONO)
+        cpf = code.paragraph_format
+        cpf.space_after = Pt(0)
+        cpf.space_before = Pt(0)
+        cpf.line_spacing = 1.0
+        cpf.left_indent = Cm(0.15)
+        cpf.right_indent = Cm(0.15)
+        cpf.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        ppr = code.element.get_or_add_pPr()
+        bdr = OxmlElement("w:pBdr")          # one grey box around consecutive code lines
+        for side in ("top", "left", "bottom", "right"):
+            e = OxmlElement(f"w:{side}")
+            e.set(qn("w:val"), "single")
+            e.set(qn("w:sz"), "4")
+            e.set(qn("w:space"), "4")
+            e.set(qn("w:color"), "A6A6A6")
+            bdr.append(e)
+        ppr.append(bdr)
+        shd = OxmlElement("w:shd")
+        shd.set(qn("w:val"), "clear")
+        shd.set(qn("w:color"), "auto")
+        shd.set(qn("w:fill"), "F2F2F2")
+        ppr.append(shd)
 
         tt = st.add_style("Table Text", WD_STYLE_TYPE.PARAGRAPH)
         tt.base_style = st["Normal"]
-        tt.font.size = Pt(9.5)
+        font(tt, 10.5)
         tt.paragraph_format.space_after = Pt(0)
+        tt.paragraph_format.space_before = Pt(0)
         tt.paragraph_format.line_spacing = 1.0
+        tt.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
 
-        h2 = st["Heading 2"]
-        h2.paragraph_format.space_before = Pt(14)
-        h2.paragraph_format.space_after = Pt(6)
-        h2.paragraph_format.keep_with_next = True
-        h3 = st["Heading 3"]
-        h3.paragraph_format.space_before = Pt(10)
-        h3.paragraph_format.space_after = Pt(4)
-        h3.paragraph_format.keep_with_next = True
-        h1 = st["Heading 1"]
-        h1.paragraph_format.space_after = Pt(12)
-        h1.paragraph_format.keep_with_next = True
+        lst = st.add_style("List Item", WD_STYLE_TYPE.PARAGRAPH)
+        lst.base_style = body
+
+        # footer page number: Calibri (not installable here) -> Times New Roman
+        for sec in self.d.sections:
+            for part in (sec.footer, sec.first_page_footer):
+                for rf in part._element.iter(qn("w:rFonts")):
+                    for a in ("w:ascii", "w:hAnsi", "w:cs"):
+                        rf.set(qn(a), SERIF)
 
     # ---------------------------------------------------------------- text
-    def _runs(self, p, text, size=None, mono_size=None):
-        """**bold** and `code` inline markup."""
+    def _runs(self, p, text, size=None, mono_size=None, plain=False):
+        """**bold** and `code` inline markup (plain=True: code shown in the body font)."""
         for part in re.split(r"(\*\*.+?\*\*|`[^`]+`)", text):
             if not part:
                 continue
@@ -280,11 +330,12 @@ class Report:
                 r.bold = True
             elif part.startswith("`") and part.endswith("`"):
                 r = p.add_run(part[1:-1])
-                r.font.name = MONO
-                r.font.size = Pt(mono_size or 10.5)
+                if not plain:
+                    r.font.name = MONO
+                    r.font.size = Pt(mono_size or 11)
             else:
                 r = p.add_run(part)
-            if size and not (part.startswith("`")):
+            if size and (plain or not part.startswith("`")):
                 r.font.size = Pt(size)
         return p
 
@@ -319,15 +370,19 @@ class Report:
             p.add_run(f"{i}.\t" if numbered else "•\t")
             self._runs(p, t)
 
-    def code(self, lines, size=8.5, shade="F2F2F2"):
+    def code(self, lines, **_ignored):
+        """Code block: Courier New 9.5 pt, single spacing, one grey bordered box
+        (the border and shading come from the Code style)."""
+        while lines and not lines[-1].strip():
+            lines = lines[:-1]
         for i, line in enumerate(lines):
             p = self.d.add_paragraph(style="Code")
-            r = p.add_run(line.replace("\t", "    ") if line else " ")
-            r.font.size = Pt(size)
-            self._shade_par(p, shade)
-            if i < len(lines) - 1 and len(lines) < 40:
-                p.paragraph_format.keep_with_next = True
-        self.d.add_paragraph(style="Report Body").paragraph_format.space_after = Pt(2)
+            p.add_run(line.replace("\t", "    ") if line else " ")
+            if i < len(lines) - 1 and len(lines) <= 45:
+                p.paragraph_format.keep_with_next = True    # short blocks stay on one page
+        gap = self.d.add_paragraph(style="Report Body")
+        gap.paragraph_format.space_after = Pt(0)
+        gap.paragraph_format.line_spacing = 1.0
 
     @staticmethod
     def _shade_par(p, fill):
@@ -343,25 +398,24 @@ class Report:
         p = self.d.add_paragraph(style="Caption")
         r = p.add_run(f"{kind} {label}: ")
         r.bold = True
-        r.italic = False
         p.add_run(text)
         (self.figures if kind == "Figure" else self.tables).append((label, text))
         return p
 
-    def figure(self, path, label, caption, width_cm=TEXT_WIDTH_CM, max_h_cm=21.0):
+    def figure(self, path, label, caption, max_h_cm=20.0, **_ignored):
+        """All figures are centred and FIG_WIDTH_CM wide; very tall images are
+        limited by height instead so that they never exceed the page."""
         from PIL import Image
         with Image.open(path) as im:
             w, h = im.size
-        width = min(width_cm, TEXT_WIDTH_CM)
-        # keep small screenshots at natural size (96 dpi), never upscale much
-        natural_cm = w / 96 * 2.54
-        width = min(width, max(natural_cm * 1.15, 6.0))
+        width = FIG_WIDTH_CM
         if width * h / w > max_h_cm:
             width = max_h_cm * w / h
         p = self.d.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.paragraph_format.keep_with_next = True
         p.paragraph_format.space_before = Pt(6)
+        p.paragraph_format.space_after = Pt(0)
         p.add_run().add_picture(path, width=Cm(width))
         self.caption("Figure", label, caption)
 
@@ -371,7 +425,10 @@ class Report:
         self.figure(path, label, caption, **kw)
 
     # ---------------------------------------------------------------- tables
-    def table(self, label, caption, header, rows, widths, size=9.5, mono_cols=()):
+    def table(self, label, caption, header, rows, widths, size=10.5, mono_cols=()):
+        size = 10.5                      # one table font size everywhere
+        scale = TEXT_WIDTH_CM / sum(widths)
+        widths = [w * scale for w in widths]   # fit the page width exactly
         cp = self.caption("Table", label, caption)
         cp.paragraph_format.keep_with_next = True
         cp.paragraph_format.space_before = Pt(8)
@@ -391,7 +448,17 @@ class Report:
         for row in rows:
             cells = t.add_row().cells
             for i, val in enumerate(row):
-                self._cell(cells[i], str(val), size, width=widths[i], mono=(i in mono_cols))
+                self._cell(cells[i], str(val), size, width=widths[i])
+        for r in t.rows:                   # a row never breaks across pages
+            trPr = r._tr.get_or_add_trPr()
+            cs = OxmlElement("w:cantSplit")
+            cs.set(qn("w:val"), "true")
+            trPr.append(cs)
+        if len(rows) <= 22:                # keep short tables in one piece
+            for r in t.rows[:-1]:
+                for c in r.cells:
+                    for p in c.paragraphs:
+                        p.paragraph_format.keep_with_next = True
         sp = self.d.add_paragraph(style="Report Body")
         sp.paragraph_format.space_after = Pt(4)
         return t
@@ -400,12 +467,7 @@ class Report:
         cell.width = Cm(width)
         p = cell.paragraphs[0]
         p.style = self.d.styles["Table Text"]
-        if mono:
-            r = p.add_run(text)
-            r.font.name = MONO
-            r.font.size = Pt(size - 1)
-        else:
-            self._runs(p, text, size=size, mono_size=size - 1)
+        self._runs(p, text, size=size, plain=True)
         if bold:
             for r in p.runs:
                 r.bold = True
@@ -514,6 +576,8 @@ def fill_front_matter(rep):
                 body.remove(el)
                 removed += 1
         el = nxt
+    contents.style = d.styles["Heading 1"]
+    set_runs(contents, "2. Table of Contents")
     contents.paragraph_format.page_break_before = True
 
     # Remove the template's guidance note after the contents table --------
@@ -527,9 +591,28 @@ def fill_front_matter(rep):
     return contents
 
 
+APPENDIX_ROWS = [("A.", "Appendix A - Source Code of Q1, Q2 and safe_string.h", "appA"),
+                 ("B.", "Appendix B - Complete Test Table for the Twenty Examples", "appB")]
+
+
 def fill_contents_table(rep):
     t = rep.d.tables[0]
-    keys = ["abstract", "contents", "lof"] + [f"s{i}" for i in range(4, 19)]
+    if len(t.rows) == 19:               # add the two appendix rows (copies of row 18)
+        for si, title, _ in APPENDIX_ROWS:
+            new = copy.deepcopy(t.rows[-1]._tr)
+            t._tbl.append(new)
+            row = t.rows[-1]
+            for cell, text in zip(row.cells[:2], (si, title)):
+                p = cell.paragraphs[0]
+                p.runs[0].text = text
+                for r in p.runs[1:]:
+                    r._r.getparent().remove(r._r)
+    for row in t.rows:                  # template table text in Times New Roman
+        for cell in row.cells:
+            for p in cell.paragraphs:
+                for r in p.runs:
+                    r.font.name = SERIF
+    keys = ["abstract", "contents", "lof"] + [f"s{i}" for i in range(4, 19)] + ["appA", "appB"]
     for row, key in zip(t.rows[1:], keys):
         cell = row.cells[2]
         p = cell.paragraphs[0]
@@ -581,8 +664,8 @@ def section_abstract(rep, contents_p):
 
 def section_lof(rep, figs, tabs):
     rep.h1("3. List of Figures and Tables")
-    for kind, items in (("Figures", figs), ("Tables", tabs)):
-        rep.h2(f"List of {kind}")
+    for n, (kind, items) in enumerate((("Figures", figs), ("Tables", tabs)), 1):
+        rep.h2(f"3.{n} List of {kind}")
         for label, cap in items:
             p = rep.d.add_paragraph(style="Report Body")
             p.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
@@ -762,26 +845,21 @@ def sections_4_to_8(rep):
                   ["Memory-management errors (CWE-415/416/690)", "One owner, one free, checked allocation", "single clean-up point, NULL after free, malloc result checked"],
               ], [4.6, 5.0, 6.4])
     rep.h2("8.2 Secure Coding Practices")
-    rep.para("The secure programs apply the following C secure-coding practices "
-             "(SEI CERT C rules in brackets [8]):")
-    rep.bullets([
-        "**Bounded string operations** - every copy, concatenation and format takes the total "
-        "buffer size (STR31-C, STR07-C).",
-        "**Guaranteed termination** - the library always writes `'\\0'`, even on error (STR32-C).",
-        "**Input validation by whitelist** - allowed characters, minimum and maximum length, "
-        "and numeric ranges are checked before use.",
-        "**Strict number parsing** - `validate_integer` replaces `atoi` and unchecked `scanf(\"%d\")` "
-        "(ERR34-C).",
-        "**Fixed format strings** - user text is only ever an argument (FIO30-C, FIO47-C).",
-        "**Check every return value** - every library status is checked; any status other "
-        "than OK is a rejection (ERR33-C).",
-        "**No dangerous functions** - no `gets`, `strcpy`, `strcat`, `sprintf`, `system()` with user "
-        "text, or `strtok` (MSC24-C); a banned-API scanner enforces this in CI.",
-        "**Compiler hardening** - `-Wall -Wextra -Werror -Wformat=2 -Wconversion`, "
-        "`-D_FORTIFY_SOURCE=2`, `-fstack-protector-strong`, PIE and full RELRO.",
-        "**Defence in depth** - validation, bounded operations, output verification, "
-        "sanitizers and tests each catch what the others might miss.",
-    ])
+    rep.para("Table 8.2 lists the secure-coding practices applied in the secure programs, with "
+             "the corresponding SEI CERT C rules [8].")
+    rep.table("8.2", "Secure coding practices applied",
+              ["Practice", "How it is applied", "CERT C"],
+              [
+                  ["Bounded string operations", "every copy, concatenation and format takes the total buffer size", "STR31-C, STR07-C"],
+                  ["Guaranteed termination", "the library always writes '\\0', even on error", "STR32-C"],
+                  ["Whitelist input validation", "allowed characters, minimum/maximum length and numeric ranges checked before use", "-"],
+                  ["Strict number parsing", "validate_integer replaces atoi and unchecked scanf(\"%d\")", "ERR34-C"],
+                  ["Fixed format strings", "user text is only ever an argument, never the format", "FIO30-C, FIO47-C"],
+                  ["Check every return value", "any library status other than OK is a rejection", "ERR33-C"],
+                  ["No dangerous functions", "no gets, strcpy, strcat, sprintf, system() with user text or strtok; enforced by the banned-API scan in CI", "MSC24-C"],
+                  ["Compiler hardening", "-Werror -Wformat=2 -Wconversion, FORTIFY_SOURCE=2, stack protector, PIE, full RELRO", "-"],
+                  ["Defence in depth", "validation, bounded operations, output verification, sanitizers and tests", "-"],
+              ], [4.2, 9.0, 3.0])
 
 
 def sections_9_to_11(rep):
@@ -795,7 +873,7 @@ def sections_9_to_11(rep):
         "any stage ends the program with `REJECTED: <reason>` and exit code 2; nothing derived "
         "from the bad input is used.")
     rep.figure(os.path.join(FIGS, "workflow.png"), "9.1",
-               "Prevention workflow used by every secure program (diagram drawn for this report)")
+               "Prevention workflow used by every secure program")
     rep.para(
         "Figure 9.2 shows how the five Phase-I modules map to the code. Modules 1-3 (Input "
         "Handling, Validation, Safe String Operations) form the library in `src/lib/`, which "
@@ -803,7 +881,7 @@ def sections_9_to_11(rep):
         "Module 4 (Vulnerability Detection/Analysis) and Module 5 (Testing and Evaluation) "
         "run on those builds, and GitHub Actions repeats both on every push.")
     rep.figure(os.path.join(FIGS, "architecture.png"), "9.2",
-               "Module architecture and build / test / analysis pipeline (diagram drawn for this report)")
+               "Module architecture and build / test / analysis pipeline")
     rep.table("9.1", "Phase-I modules and their implementation",
               ["Module", "Implementation", "Main functions / files"],
               [
@@ -858,11 +936,6 @@ def sections_9_to_11(rep):
         "mutation check (a copy of `safe_copy` with its bound removed fails 5 unit tests) and "
         "negative controls (the vulnerable binaries are tested as if they were the secure "
         "ones; the suites must then fail - Table 14.9).")
-    rep.para(
-        "**Evidence.** `docs/report/collect_outputs.sh` re-runs every command used in this "
-        "report and saves the output in `docs/report/outputs/`; the tables in Section 14 are "
-        "generated from those files, and the screenshots in Section 15 were captured by the "
-        "team from the same commands.")
     rep.h2("11.1 Vulnerability Identification")
     rep.para("Each weakness was identified by reading the code, then confirmed by running the "
              "vulnerable build. Table 11.1 maps the bugs of the two case studies to their CWE IDs; "
@@ -1011,24 +1084,21 @@ def section_13(rep):
                   ["asan", "bin/asan/, bin/examples/*/*_asan", "-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -D_FORTIFY_SOURCE=0", "run-time detection"],
               ], [2.0, 4.0, 6.4, 3.6], size=8.5)
     rep.para(
-        "FORTIFY_SOURCE is disabled in the ASan build because Ubuntu's gcc enables it by "
-        "default at -O1, and during development it aborted the vulnerable program "
-        "(`*** buffer overflow detected ***`) before ASan could report. The experiment for "
-        "each program is: build all variants (`make all asan`), run the test suites "
-        "(`make test`), run the analysis (`make analyze`) and capture outputs "
-        "(`bash docs/report/collect_outputs.sh`).")
+        "FORTIFY_SOURCE is disabled in the ASan build because Ubuntu's gcc enables it at -O1 "
+        "and it would abort before ASan can report. Each experiment runs `make all asan`, "
+        "`make test` and `make analyze`.")
     rep.h2("13.1 Ethical Considerations")
     rep.bullets([
         "All development and testing ran inside an isolated GitHub Codespace container and on "
         "GitHub's isolated CI runners; no real systems, networks or third-party data were involved.",
-        "The vulnerable programs read only local input (command-line arguments, redirected "
-        "standard input and test files in the repository) and were never deployed.",
+        "The vulnerable programs, each labelled as a deliberately insecure teaching example, read "
+        "only local input (arguments, redirected standard input, repository test files) and were "
+        "never deployed.",
         "No exploit payloads were used: overflow tests use runs of the letter 'A', the "
         "format-string tests only read memory (%p, %lx, %s) and never use %n, the "
         "command-injection test only runs `echo INJECTED`, and the path-traversal test reads a "
-        "test fixture containing a dummy value.",
-        "The \"secret\" leaked in Q2 is a simulated constant in our own program.",
-        "Every vulnerable file is labelled as a deliberately insecure teaching example.",
+        "test fixture containing a dummy value; the \"secret\" leaked in Q2 is a simulated "
+        "constant in our own program.",
     ])
 
 
@@ -1060,7 +1130,7 @@ def section_14(rep):
         rep.table(label, cap, ["ID", "Category", "Input", "Vulnerable (plain)", "Vulnerable (ASan)",
                                "Expected", "Secure result", "Result"],
                   [[r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[8]] for r in rows],
-                  [1.2, 1.7, 2.9, 2.6, 2.6, 1.5, 2.4, 1.1], size=7.5)
+                  [1.35, 1.9, 2.4, 2.4, 2.55, 1.8, 2.5, 1.3])
 
     rep.h2("14.2 Q1 - Vulnerable vs Secure")
     q1d = defect_q(Q1)
@@ -1161,7 +1231,8 @@ def section_14(rep):
                 "suite detects the unsafe code"] for k in ("q1_overflow", "q2_format", "examples")],
               [3.4, 3.4, 3.6, 5.6])
 
-    rep.h2("14.6 Limitations")
+    lim = rep.h2("14.6 Limitations")
+    lim.paragraph_format.page_break_before = True    # one complete block, not a spill-over
     rep.bullets([
         "**ASan blind spots.** AddressSanitizer did not detect the overflow that stays inside a "
         "struct (Q1, 16-20 characters), nor any logic bug: format-string leaks, command "
@@ -1179,14 +1250,12 @@ def section_14(rep):
         "programs do, and CI enforces this only through tests and review).",
         "The path-traversal fix checks the path with realpath() and then opens it; a file "
         "replaced between the two calls (a race) is not handled in this teaching example.",
-        "Page numbers in this report's contents were taken from the LibreOffice rendering and "
-        "may differ slightly when the .docx is opened in Microsoft Word.",
     ])
 
 
 SHOT_CAPTIONS = [
     ("01_toolchain_versions.png", "Toolchain versions: gcc, Cppcheck and Valgrind"),
-    ("02_repo_structure.png", "Repository structure - end of the tree output (screenshot)"),
+    ("02_repo_structure.png", "Repository structure (end of the tree output)"),
     ("03_make_help.png", "Makefile targets (make help)"),
     ("04_unit_tests_safe_string.png", "Unit tests for the safe-string library (55 tests)"),
     ("05_unit_tests_input_handler.png", "Unit tests for the input handler (25 tests)"),
@@ -1216,16 +1285,13 @@ SHOT_CAPTIONS = [
 def section_15(rep):
     rep.h1("15. Screenshots / Demonstration")
     rep.para(
-        "The following screenshots were captured by the team from the commands listed in "
-        "screenshots/SCREENSHOT_LIST.md, in the project's Codespace and on GitHub. Figure "
-        "15.2b is captured terminal output, rendered from a re-run of the command because the "
-        "screenshot shows only the end of the tree.")
+        "This chapter shows the program runs, test results and analysis output captured in the "
+        "project's GitHub Codespace, and the continuous-integration runs on GitHub.")
     for i, (f, cap) in enumerate(SHOT_CAPTIONS, 1):
         if i == 2:
-            rep.shot(f, "15.2a", cap, width_cm=11)
+            rep.shot(f, "15.2a", cap)
             rep.figure(os.path.join(FIGS, "term_tree.png"), "15.2b",
-                       "Captured terminal output - repository tree (tree -a -L 3), rendered from a re-run",
-                       width_cm=10.5, max_h_cm=22)
+                       "Repository tree (tree -a -L 3)")
             continue
         if i == 26:
             break
@@ -1300,26 +1366,28 @@ def sections_16_to_18(rep):
         p.paragraph_format.left_indent = Cm(1.0)
         p.paragraph_format.first_line_indent = Cm(-1.0)
         p.paragraph_format.tab_stops.add_tab_stop(Cm(1.0))
+        p.paragraph_format.line_spacing = 1.0
+        p.paragraph_format.space_after = Pt(6)
         p.add_run(f"[{i}]\t{ref}")
 
 
 def appendices(rep):
-    rep.h1("Appendix A - Complete Source Code")
-    rep.para("The complete source code of the library, the two case studies and the twenty "
-             "examples, exactly as in the repository (https://github.com/Anand8k7/string-vuln-prevention).")
-    files = (["src/lib/safe_string.h", "src/lib/safe_string.c", "src/lib/input_handler.h",
-              "src/lib/input_handler.c", "src/vulnerable/q1_overflow.c", "src/secure/q1_overflow.c",
-              "src/vulnerable/q2_format.c", "src/secure/q2_format.c"] +
-             [f"src/examples/{e[0]}/{v}.c" for e in EXAMPLES for v in ("vulnerable", "secure")])
-    for f in files:
-        rep.h3(f"A.{files.index(f) + 1}  {f}")
-        rep.code(read(os.path.join(ROOT, f)).rstrip("\n").split("\n"), size=7.5, shade="F5F5F5")
+    rep.h1("Appendix A - Source Code of Q1, Q2 and safe_string.h")
+    rep.para("This appendix lists the complete code of the two case studies (vulnerable and "
+             "secure versions) and the interface of the safe-string library.")
+    files = ["src/lib/safe_string.h", "src/vulnerable/q1_overflow.c", "src/secure/q1_overflow.c",
+             "src/vulnerable/q2_format.c", "src/secure/q2_format.c"]
+    for n, f in enumerate(files, 1):
+        rep.h2(f"A.{n} {f}")
+        rep.code(read(os.path.join(ROOT, f)).rstrip("\n").split("\n"))
+    rep.para("**Full source code:** https://github.com/Anand8k7/string-vuln-prevention "
+             "(input_handler, safe_string.c, the twenty examples, tests and analysis scripts).")
     rep.h1("Appendix B - Complete Test Table for the Twenty Examples")
     rep.table("B.1", f"All {len(EX)} example test cases (tests/scenarios/examples.sh)",
               ["ID", "Category", "Input", "Vulnerable (plain)", "Vulnerable (ASan)", "Expected",
                "Secure result", "Result"],
               [[r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[8]] for r in EX],
-              [1.2, 1.7, 2.9, 2.6, 2.6, 1.5, 2.4, 1.1], size=7.5)
+              [1.35, 1.9, 2.4, 2.4, 2.55, 1.8, 2.5, 1.3])
 
 
 # =============================================================================
@@ -1357,6 +1425,8 @@ def fix_schema_order(d):
         _reorder(el, _PPR_ORDER)
     for el in root.iter(qn("w:tcPr")):
         _reorder(el, _TCPR_ORDER)
+    for el in d.styles.element.iter(qn("w:pPr")):      # e.g. the Code style's box
+        _reorder(el, _PPR_ORDER)
 
 
 def build(pages):
@@ -1397,12 +1467,14 @@ HEAD_KEYS = {
     "s13": "13. Experimental Setup", "s14": "14. Results and Analysis",
     "s15": "15. Screenshots / Demonstration", "s16": "16. Conclusion",
     "s17": "17. Future Enhancements", "s18": "18. References",
+    "appA": "Appendix A - Source Code of Q1, Q2 and safe_string.h",
+    "appB": "Appendix B - Complete Test Table for the Twenty Examples",
 }
 
 
 def find_pages(pages_text, rep):
     found = {}
-    contents_pg = next(i for i, t in enumerate(pages_text) if "Contents SI No" in t) + 1
+    contents_pg = next(i for i, t in enumerate(pages_text) if "2. Table of Contents SI No" in t) + 1
     found["contents"] = contents_pg
     found["abstract"] = next(i for i, t in enumerate(pages_text) if HEAD_KEYS["abstract"] in t) + 1
     start = contents_pg
@@ -1444,6 +1516,12 @@ def main():
         pages = new
     else:
         sys.exit("page numbers did not settle")
+    sparse = []
+    for i, t in enumerate(text[:-1], 1):
+        words = len(t.split())
+        if words < 90:
+            sparse.append((i, words))
+    print("pages with little text (page, words):", sparse)
     print("contents:", {k: pages[k] for k in ["abstract", "contents", "lof"] + [f"s{i}" for i in range(4, 19)]})
     print("written:", OUT_DOCX, OUT_PDF)
 

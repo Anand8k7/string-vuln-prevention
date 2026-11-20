@@ -21,9 +21,9 @@ ROOT = os.path.normpath(os.path.join(HERE, "..", ".."))
 OUT = os.path.join(HERE, "figures")
 os.makedirs(OUT, exist_ok=True)
 
-SANS = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-SANS_B = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-MONO = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+SANS = "/usr/share/fonts/truetype/msttcorefonts/Times_New_Roman.ttf"       # matches the report
+SANS_B = "/usr/share/fonts/truetype/msttcorefonts/Times_New_Roman_Bold.ttf"
+MONO = "/usr/share/fonts/truetype/msttcorefonts/Courier_New.ttf"
 
 INK = (33, 37, 41)
 BLUE = (31, 78, 140)
@@ -70,7 +70,7 @@ def workflow():
     W, H = 2000, 900
     im = Image.new("RGB", (W, H), "white")
     d = ImageDraw.Draw(im)
-    ft, fb, fs = font(SANS_B, 30), font(SANS, 22), font(SANS, 21)
+    ft, fb, fs = font(SANS_B, 32), font(SANS, 25), font(SANS, 23)
     d.text((60, 30), "Prevention workflow implemented by every secure program",
            font=font(SANS_B, 34), fill=BLUE)
     stages = [
@@ -86,7 +86,7 @@ def workflow():
     centers = []
     for i, s in enumerate(stages):
         fill, out = (GREEN_BG, GREEN) if i == 5 else (BLUE_BG, BLUE)
-        size = 30
+        size = 32
         while d.textbbox((0, 0), s[0], font=font(SANS_B, size))[2] > bw - 24:
             size -= 1
         box(d, (x, top, x + bw, top + bh), fill, out, list(s), font(SANS_B, size), fb,
@@ -115,10 +115,10 @@ def workflow():
 
 
 def architecture():
-    W, H = 2000, 1250
+    W, H = 2000, 1160
     im = Image.new("RGB", (W, H), "white")
     d = ImageDraw.Draw(im)
-    ft, fb = font(SANS_B, 27), font(SANS, 21)
+    ft, fb = font(SANS_B, 30), font(SANS, 25)
     d.text((60, 30), "Module architecture and build / test / analysis pipeline",
            font=font(SANS_B, 34), fill=BLUE)
     # row 1: sources
@@ -134,7 +134,7 @@ def architecture():
     # library (to the right of the secure -> Makefile arrow)
     box(d, (820, 370, 1300, 600), BLUE_BG, BLUE,
         ["src/lib/ (modules 1-3)", "input_handler: bounded input", "safe_string: validate_input,",
-         "validate_integer, safe_copy,", "safe_concat, safe_format"], font(SANS_B, 25), fb,
+         "validate_integer, safe_copy,", "safe_concat, safe_format"], font(SANS_B, 28), fb,
         title_color=BLUE)
     arrow(d, (1060, 370), (1060, 304), color=BLUE)
     arrow(d, (1300, 485), (1530, 304), color=BLUE)
@@ -156,8 +156,6 @@ def architecture():
     for (t, a, b, c), x in zip(boxes, xs):
         box(d, (x, 920, x + 600, 1120), GREEN_BG, GREEN, [t, a, b, c], ft, fb, title_color=GREEN)
         arrow(d, (x + 300, 824), (x + 300, 916), color=GREEN)
-    d.text((60, 1160), "Results are saved in analysis/logs/ and docs/report/outputs/; every number in this report comes from those files.",
-           font=font(SANS, 21), fill=GREY)
     im.save(os.path.join(OUT, "architecture.png"))
 
 
