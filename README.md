@@ -127,6 +127,23 @@ normal, boundary, invalid and oversized inputs. Each test also checks
 **guard bytes** placed after the buffer, and the test binaries run under
 AddressSanitizer + UBSan.
 
+### Q1 – Buffer overflow via `strcpy` / `strcat`
+
+```bash
+make all asan
+./bin/vulnerable/q1_overflow alice cse                 # normal
+./bin/vulnerable/q1_overflow AAAAAAAAAAAAAAAAAAAA cse  # role overwritten -> "AAAA"
+./bin/asan/vulnerable_q1_overflow abcdefghijklmno abcdefghijklmno  # ASan: stack-buffer-overflow
+./bin/secure/q1_overflow AAAAAAAAAAAAAAAAAAAA cse      # REJECTED: username is too long
+bash tests/scenarios/q1_overflow.sh                    # 17 cases, vulnerable vs secure
+```
+
+| Source | Description |
+|--------|-------------|
+| `src/vulnerable/q1_overflow.c` | `strcpy`/`strcat` into `username[16]`, `greeting[32]`, `path[32]` with no checks |
+| `src/secure/q1_overflow.c` | Workflow: bounded input → whitelist validation → `safe_copy`/`safe_concat`/`safe_format` (reject on `SS_TRUNCATED`) → output verification |
+| `tests/scenarios/q1_overflow.sh` | Runs every case on 4 builds (vulnerable, vulnerable+ASan, secure, secure+ASan) |
+
 ---
 
 ## 5. Safety note
@@ -142,7 +159,7 @@ protections only so that the bugs can be observed. Do not reuse that code.
 
 - [x] Phase 1 – Skeleton, Makefile, README
 - [x] Phase 2 – Safe string library and unit tests
-- [ ] Phase 3 – Q1: `strcpy`/`strcat` overflow (vulnerable + secure + tests)
+- [x] Phase 3 – Q1: `strcpy`/`strcat` overflow (vulnerable + secure + tests)
 - [ ] Phase 4 – Q2: input validation and format strings (vulnerable + secure + tests)
 - [ ] Phase 5 – Analysis script and CI workflow
 - [ ] Phase 6 – Final report (`docs/report/report.md`)

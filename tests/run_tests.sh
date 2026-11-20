@@ -7,7 +7,7 @@
 #
 #  Runs (in order):
 #    1. every unit-test binary   bin/tests/test_*
-#    2. every scenario script    tests/scenarios/*.sh   (added for Q1 / Q2)
+#    2. every scenario script    tests/scenarios/*.sh   (except lib_*.sh)
 #  Each suite prints its own PASS/FAIL table and a "TF_RESULT <suite> <p> <t>"
 #  line, which is collected here into one summary table.
 #
@@ -45,6 +45,7 @@ for t in bin/tests/test_*; do
 done
 
 for s in tests/scenarios/*.sh; do
+    case "$(basename "$s")" in lib_*) continue ;; esac   # helper, not a suite
     run_suite "$(basename "$s" .sh)" bash "$s"
 done
 
