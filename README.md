@@ -63,7 +63,9 @@ User Input → Input Validation → Length & Boundary Checking
 ├── tests/            test runner that prints a PASS/FAIL table
 ├── analysis/         cppcheck + ASan + valgrind script; logs/ holds output
 ├── docs/report/      final project report (report.md)
+├── web/              local web app (Flask): scanner, runtime check, input tester, examples
 ├── screenshots/      terminal captures used in the report
+├── demo.sh           step-by-step Q1/Q2 demo (vulnerable vs secure, ASan, cppcheck)
 ├── Makefile
 └── .github/workflows/ci.yml   build + test + cppcheck on every push
 ```
@@ -76,6 +78,7 @@ User Input → Input Validation → Length & Boundary Checking
 - `gcc` (tested with 13.3), `make`
 - `cppcheck` (tested with 2.13)
 - `valgrind` (tested with 3.22)
+- Python 3 and Flask, only for the web app (tested with Python 3.14, Flask 3.1)
 
 Install on Ubuntu/Debian:
 
@@ -96,6 +99,7 @@ make asan       # both, with AddressSanitizer + UBSan -> bin/asan/
 make examples   # the 20 small examples, 4 builds each -> bin/examples/
 make test       # run the test suite (PASS/FAIL table)
 make analyze    # cppcheck + ASan + valgrind, logs in analysis/logs/
+make web        # build everything and start the web app on http://127.0.0.1:5000
 make clean      # remove build output and logs
 ```
 
@@ -215,6 +219,62 @@ every log to `analysis/logs/` (summary in `analysis/logs/summary.txt`):
 
 The script exits non-zero only if something is found in the **secure** code.
 
+### Web app (`web/`)
+
+A local web page where you can paste input or C code and check it for string
+vulnerabilities. Backend: Python Flask (`web/app.py`). Frontend: one HTML page
+with plain CSS and JavaScript (`web/static/`), no frameworks.
+
+```bash
+pip install -r web/requirements.txt   # Flask
+make web                              # = make all asan + python3 web/app.py
+# or, if the programs are already built:
+python3 web/app.py
+```
+
+Then open **http://127.0.0.1:5000/**.
+
+| Tab | What it does |
+|-----|--------------|
+| 1 · Code Scanner | Paste C/C++ code. Our rule-based scanner (`web/scanner.py`) and cppcheck look for `strcpy`, `strcat`, `gets`, `sprintf`, `vsprintf`, `scanf("%s")` without a width, `printf`/`fprintf` with a non-literal format, `strncpy` without `'\0'`, `memcpy` sized by `strlen` or by the source, `system()`, `<=` off-by-one loops, `malloc(strlen(x))` without `+ 1`, unchecked `malloc`/`scanf` results, use after free and double free. Each finding shows its line (highlighted in the code), CWE ID, severity, a short explanation and the safe replacement, plus a summary score from 0 to 100. |
+| 2 · Runtime Check | Paste a C program plus stdin and arguments. It is compiled with `gcc -fsanitize=address,undefined -g` and run. The ASan / UBSan / LeakSanitizer report is explained in plain English (type of bug, line, variable, bytes), and the raw output is in a collapsible box. |
+| 3 · Input Tester | Type name, role, age and message. The same input goes to `q1_overflow` (arguments) and `q2_format` (stdin): vulnerable, vulnerable + ASan, secure and secure + ASan, side by side, with badges **EXPLOITED / CRASHED / ASan ERROR** vs **REJECTED / SAFE**. |
+| 4 · Examples | Pick one of the 20 examples to see `vulnerable.c` and `secure.c` side by side (`BUG:` / `FIX:` lines highlighted). Each test case from `tests/scenarios/examples.sh` has its own Run button that runs it on all 4 builds and shows PASS/FAIL. |
+
+Tabs 1–3 have a **Load sample** button, so each demo takes one click.
+
+**Safety.** The app runs code you paste, so it is for local educational use only:
+
+* the server binds to `127.0.0.1` only and shows a "For local educational use only" banner;
+* every compile and run happens in a new temporary directory that is deleted afterwards;
+* limits: 5 s wall clock and 5 s CPU per run, 256 MB memory (ASan builds use ASan's
+  own 256 MB RSS limit), 1 MB file size, 64 open files, a process limit, max 20 KB
+  of code, max 4 KB of input, output cut to 64 KB;
+* no `shell=True`: every command is an argument list;
+* programs run inside `unshare --user --net`, so they have no network and run as
+  `nobody`. If that is not available, the app prints a note at start-up and runs
+  without network isolation. If the server is started as root, programs are
+  switched to `nobody` before they start;
+* the Examples tab only runs the fixed test cases, never free-form input.
+
+It does not hide your files from the code it runs: a pasted program can still
+read the files your user can read. Only run code you understand.
+
+Check every tab from the command line while the app is running:
+
+```bash
+bash web/smoke_test.sh        # 23 curl checks, prints PASS/FAIL
+```
+
+**Screenshots** (placeholders; capture them with the app running):
+
+| File | What to capture |
+|------|-----------------|
+| `screenshots/28_web_scanner.png` | Code Scanner after *Load sample → Scan code*: score, highlighted lines, findings |
+| `screenshots/29_web_runtime.png` | Runtime Check with the *Stack overflow (strcpy)* sample: verdict and plain-English explanation |
+| `screenshots/30_web_input_tester.png` | Input Tester with *Long name (overflow)*: Q1 and Q2 badges side by side |
+| `screenshots/31_web_examples.png` | Examples tab, `e13_command_injection`, case E13-2 |
+
 ### Continuous integration
 
 `.github/workflows/ci.yml` runs on every push and pull request (Ubuntu 24.04):
@@ -257,3 +317,4 @@ being leaked; no `%n` (memory write) input is used. Do not reuse that code.
 - [x] Phase 4 – Q2: input validation and format strings (vulnerable + secure + tests)
 - [x] Phase 5 – Analysis script and CI workflow
 - [x] Phase 6 – Final report (`docs/report/report.md`)
+- [x] Local web app (`web/`, `make web`)

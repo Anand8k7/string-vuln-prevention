@@ -10,6 +10,7 @@
 #    make examples     -> build the 20 small examples       (bin/examples/)
 #    make test         -> build and run the test suite (PASS/FAIL table)
 #    make analyze      -> cppcheck + ASan + Valgrind, logs in analysis/logs/
+#    make web          -> build everything and start the web app (127.0.0.1:5000)
 #    make clean        -> remove all build output
 #
 #  Sources are discovered automatically: every  src/vulnerable/X.c  becomes
@@ -73,12 +74,12 @@ TEST_BIN   := $(patsubst tests/%.c,$(BIN)/tests/%,$(TEST_SRC))
 EX_NAMES   := $(notdir $(patsubst %/vulnerable.c,%,$(wildcard src/examples/*/vulnerable.c)))
 EX_BIN     := $(foreach e,$(EX_NAMES),$(addprefix $(BIN)/examples/$(e)/,vulnerable secure vulnerable_asan secure_asan))
 
-.PHONY: all lib vulnerable secure asan examples test analyze clean help
+.PHONY: all lib vulnerable secure asan examples test analyze web clean help
 
 all: vulnerable secure examples
 
 help:
-	@sed -n '5,14p' Makefile
+	@sed -n '5,15p' Makefile
 
 # -----------------------------------------------------------------------------
 # Build rules
@@ -159,6 +160,12 @@ analyze: all asan
 	else \
 		echo "[analyze] analysis/run_analysis.sh not present yet (added in Phase 5)"; \
 	fi
+
+# Local web app (web/app.py). Needs Flask: pip install -r web/requirements.txt
+web: all asan
+	@python3 -c "import flask" 2>/dev/null || { \
+		echo "Flask is not installed. Run: pip install -r web/requirements.txt"; exit 1; }
+	python3 web/app.py
 
 clean:
 	rm -rf $(BIN)

@@ -19,3 +19,7 @@ analysis/logs/summary.txt
 .idea/
 *.swp
 .DS_Store
+
+# Python
+__pycache__/
+*.pyc

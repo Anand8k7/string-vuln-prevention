@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>String Vulnerability Lab</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">{ }</div>
+      <div>
+        <h1>String Vulnerability Lab</h1>
+        <p class="subtitle">Implementing Prevention Methods for String Vulnerabilities</p>
+        <p class="course">CYE551 – Secure Coding Using C/C++ · MSRIT, Dept. of CSE (Cyber Security)</p>
+      </div>
+    </div>
+    <div class="team">
+      <div class="team-title">Team</div>
+      <div>Yuval <span>1MS24CY021</span></div>
+      <div>Anand <span>1MS24CY010</span></div>
+      <div>Sathish Kumar S <span>1MS24CY055</span></div>
+      <div class="guide">Guide: Prof. Shankaramma</div>
+    </div>
+  </div>
+</header>
+
+<div class="banner">
+  <div class="wrap">
+    <strong>For local educational use only.</strong>
+    <span id="limits">Code you submit is compiled and run on this machine inside a sandbox.</span>
+  </div>
+</div>
+
+<nav class="tabs wrap" role="tablist">
+  <button class="tab active" data-tab="scan" role="tab">1 · Code Scanner</button>
+  <button class="tab" data-tab="runtime" role="tab">2 · Runtime Check</button>
+  <button class="tab" data-tab="input" role="tab">3 · Input Tester</button>
+  <button class="tab" data-tab="examples" role="tab">4 · Examples</button>
+</nav>
+
+<main class="wrap">
+  <div id="warnings"></div>
+
+  <!-- ================================================================ 1 -->
+  <section id="tab-scan" class="panel active">
+    <div class="panel-head">
+      <div>
+        <h2>Code Scanner</h2>
+        <p class="hint">Paste C/C++ code. Our rule-based scanner and cppcheck look for unsafe string handling.</p>
+      </div>
+      <div class="toolbar">
+        <select id="scan-sample" aria-label="Sample"></select>
+        <button class="btn" id="scan-load">Load sample</button>
+        <select id="scan-lang" aria-label="Language"><option value="c">C</option><option value="cpp">C++</option></select>
+        <button class="btn primary" id="scan-run">Scan code</button>
+      </div>
+    </div>
+    <textarea id="scan-code" class="code-input" spellcheck="false" placeholder="Paste C code here…"></textarea>
+    <div class="meta-line"><span id="scan-size">0 B</span> / 20 KB</div>
+    <div id="scan-result"></div>
+  </section>
+
+  <!-- ================================================================ 2 -->
+  <section id="tab-runtime" class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Runtime Check</h2>
+        <p class="hint">Compiles with <code>gcc -fsanitize=address,undefined -g</code>, runs the program and explains the sanitizer report.</p>
+      </div>
+      <div class="toolbar">
+        <select id="rt-sample" aria-label="Sample"></select>
+        <button class="btn" id="rt-load">Load sample</button>
+        <select id="rt-lang" aria-label="Language"><option value="c">C</option><option value="cpp">C++</option></select>
+        <button class="btn primary" id="rt-run">Compile &amp; run</button>
+      </div>
+    </div>
+    <textarea id="rt-code" class="code-input" spellcheck="false" placeholder="Paste a complete C program (with main) here…"></textarea>
+    <div class="meta-line"><span id="rt-size">0 B</span> / 20 KB</div>
+    <div class="grid-2">
+      <label class="field">Command-line arguments
+        <input id="rt-args" type="text" spellcheck="false" placeholder='e.g. alice "two words"'>
+      </label>
+      <label class="field">Standard input
+        <textarea id="rt-stdin" rows="3" spellcheck="false" placeholder="Text sent to the program's stdin"></textarea>
+      </label>
+    </div>
+    <div id="rt-result"></div>
+  </section>
+
+  <!-- ================================================================ 3 -->
+  <section id="tab-input" class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Input Tester</h2>
+        <p class="hint">The same input goes to the project programs, vulnerable vs secure, plain and with ASan.
+          Q1 gets <code>q1_overflow &lt;name&gt; &lt;role&gt;</code>; Q2 gets name, age and message on stdin.</p>
+      </div>
+      <div class="toolbar">
+        <select id="in-sample" aria-label="Sample"></select>
+        <button class="btn" id="in-load">Load sample</button>
+        <button class="btn primary" id="in-run">Run all 8 programs</button>
+      </div>
+    </div>
+    <div class="grid-4">
+      <label class="field">Name / username <input id="in-name" type="text" spellcheck="false"></label>
+      <label class="field">Role / department (Q1) <input id="in-role" type="text" spellcheck="false"></label>
+      <label class="field">Age (Q2) <input id="in-age" type="text" spellcheck="false"></label>
+      <label class="field">Message (Q2) <input id="in-message" type="text" spellcheck="false"></label>
+    </div>
+    <div id="in-result"></div>
+  </section>
+
+  <!-- ================================================================ 4 -->
+  <section id="tab-examples" class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Examples</h2>
+        <p class="hint">The 20 small examples from <code>src/examples/</code>, with the test cases from <code>tests/scenarios/examples.sh</code>.</p>
+      </div>
+      <div class="toolbar">
+        <select id="ex-select" aria-label="Example"></select>
+      </div>
+    </div>
+    <div id="ex-info"></div>
+    <div class="grid-2 code-pair">
+      <div>
+        <div class="pane-title bad-title">vulnerable.c</div>
+        <div id="ex-vuln" class="code-view"></div>
+      </div>
+      <div>
+        <div class="pane-title good-title">secure.c</div>
+        <div id="ex-secure" class="code-view"></div>
+      </div>
+    </div>
+    <h3>Test cases</h3>
+    <div id="ex-cases" class="case-buttons"></div>
+    <div id="ex-result"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">CYE551 Mini Project · M. S. Ramaiah Institute of Technology · Runs on 127.0.0.1 only</div>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
