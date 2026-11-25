@@ -19,7 +19,14 @@ async function api(path, data) {
   const opts = data === undefined ? {} : {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
   };
-  const res = await fetch(path, opts);
+  let res;
+  try {
+    res = await fetch(path, opts);
+  } catch {
+    // The page is still open but the Flask server is not reachable.
+    throw new Error("Cannot reach the server. It has probably stopped: start it again with " +
+      "`make web` (or `python3 web/app.py`) in the terminal, then reload this page.");
+  }
   let json;
   try { json = await res.json(); } catch { json = { error: `Server returned ${res.status}` }; }
   if (!res.ok) throw new Error(json.error || `Request failed (${res.status})`);
