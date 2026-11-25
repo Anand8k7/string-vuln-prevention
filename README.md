@@ -245,7 +245,7 @@ Tabs 1–3 have a **Load sample** button, so each demo takes one click.
 
 **Safety.** The app runs code you paste, so it is for local educational use only:
 
-* the server binds to `127.0.0.1` only and shows a "For local educational use only" banner;
+* the server binds to `127.0.0.1` only;
 * every compile and run happens in a new temporary directory that is deleted afterwards;
 * limits: 5 s wall clock and 5 s CPU per run, 256 MB memory (ASan builds use ASan's
   own 256 MB RSS limit), 1 MB file size, 64 open files, a process limit, max 20 KB

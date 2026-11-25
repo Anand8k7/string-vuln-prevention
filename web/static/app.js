@@ -359,12 +359,6 @@ document.addEventListener("click", e => {
     fillSelect($("#rt-sample"), Object.keys(samples.runtime));
     fillSelect($("#in-sample"), Object.keys(samples.input));
 
-    const L = info.limits;
-    $("#limits").textContent =
-      `Code you submit is compiled and run on this machine in a sandbox: ${L.timeout_s} s timeout, ` +
-      `${L.memory_mb} MB memory, ${L.max_file_bytes / 1048576} MB files, ` +
-      `${L.network_isolated ? "no network" : "network NOT isolated"}, runs as ${L.runs_as}.`;
-
     const warn = [];
     if (info.missing_binaries.length)
       warn.push(`Missing project programs (${info.missing_binaries.join(", ")}). Run <code>make all asan</code> for the Input Tester.`);
